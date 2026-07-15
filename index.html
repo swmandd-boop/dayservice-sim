@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v3.1-2026-07-15-reconcile">
+<meta name="version" content="v4-2026-07-15-advisor">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -408,6 +408,18 @@
       .rep-omit{font-size:11.5px;color:var(--muted);line-height:1.7;background:#f2f6f4;
         border-radius:8px;padding:10px 12px;margin-bottom:20px;}
 
+/* ベテラン相談員 */
+.advisor{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--line);
+  border-left-width:5px;border-radius:14px;padding:14px 16px;margin-bottom:16px;}
+.advisor .adv-avatar{flex:0 0 auto;line-height:0;}
+.advisor .adv-avatar svg{display:block;border-radius:50%;}
+.adv-body{min-width:0;}
+.adv-name{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted);margin-bottom:3px;}
+.adv-text{font-size:13.5px;line-height:1.75;color:var(--ink);}
+.adv-guide{border-left-color:var(--teal);}
+.adv-soft{border-left-color:var(--slate);}
+.adv-alert{border-left-color:var(--clay);background:#fbf1ec;}
+.adv-good{border-left-color:var(--green);background:#eef7f2;}
 html{margin:0;padding:0;}
 body{padding:24px 16px;margin:0;}
 .frame{max-width:640px;margin:0 auto;}
@@ -1356,6 +1368,57 @@ function diagnoseIssues(log, finalState) {
   };
 }
 
+/* ===================== ベテラン相談員（表示専用・状態を読むだけの純粋な追加） =====================
+   新人所長を支える生活相談員のひとこと。ゲームロジックには一切触れず、state を読んで
+   判断画面に出すコメントを返すだけ（reasons/mix/資金には書き込まない）。
+   セリフは叩き台（相談員セリフ_叩き台.md）で、監修で ADVISOR_LINES を差し替え可能。
+   ADVISOR_NAME を変えれば相談員に名前を付けられる。 */
+const ADVISOR_NAME = "相談員";
+
+const ADVISOR_LINES = {
+  // 序盤：判断の基準を教える固定ガイド（1〜3月）
+  guide: {
+    1: "所長、就任おめでとうございます。まずは経営方針を決めるところから始めましょう。「どんなデイにしたいか」——それが、これからの全ての出発点になります。難しく考えなくて大丈夫。私も一緒に考えますので。",
+    2: "少しずつ慣れてきましたか。判断の材料は、大きく4つです。誰を受け入れるか、どこまで手厚くケアするか、職員をどう配置するか、加算を取りにいくか。どれか一つだけ、では回りません。バランスなんです。",
+    3: "もうお気づきかもしれませんが……良いケアをしていても、それだけでは経営は成り立たないんです。利用者さんの満足も、職員の定着も、記録も、お金も。どれが欠けても、数ヶ月後に返ってきます。焦らず、一つずつ。",
+  },
+  // 中盤以降：その月で最も深刻な1つ（順調なら承認）
+  cash:  "所長、はっきり言います。手元の現金が危ういです。介護報酬は2ヶ月遅れで入ってきます。「黒字なのにお金がない」——これで潰れる事業所、本当にあるんです。今すぐ手を打ちましょう。",
+  ret:   "所長、少し気になることが。最近、職員に疲れが見えます。人が辞めると、その穴埋めに追われて、また次の人が辞める……この繰り返しが一番こわい。「辞めない職場」をどう作るか、そろそろ考えどきかもしれません。",
+  occ:   "所長、もう少し利用者さんに来てもらえるといいのですが……。席は空いているのに、埋まっていない。もったいないです。ケアマネさんへの挨拶回り、一緒に考えましょうか。",
+  kasan: "所長、差し出がましいですが……うち、加算をほとんど取れていません。こんなに良いケアをしているのに、もったいないんです。体制さえ整えば、取れるはずの加算があります。一度、棚卸ししてみませんか。",
+  comp:  "所長、記録が追いついていませんね。忙しいのは分かります。でも、実地指導が入ったら、まず見られるのがここです。「後で書く」が積もると、取り返しがつかなくなります。早めに立て直しましょう。",
+  bcp:   "所長、災害への備え、後回しになっていませんか。感染症も、地震も、水害も——起きてからでは間に合いません。備えは、平時にしか作れないんです。今のうちに、少しずつでも。",
+  heavy: "所長、最近、要介護度の重い方が増えてきましたね。ありがたいことですが……介助の手間は、確実に増えます。職員が疲れていないか、人手は足りているか。無理をすると、事故につながります。",
+  good:  "所長、いい経営をされています。利用者さんにも職員にも、ちゃんと向き合えている。この調子でいきましょう。……私が言うことも、なくなってきましたね。",
+  final: "所長、この1年、本当にお疲れさまでした。うまくいったことも、そうでないことも、全部これからの糧になります。このあと、1年の通期決算が出ます。数字だけでなく、「何を大事にしてきたか」も、一緒に振り返りましょう。",
+};
+
+/* 状態から相談員のひとことを選ぶ。読むだけ・戻り値は {tone, text}。
+   序盤(1-3月)は固定ガイド。中盤以降は最も深刻な1件を（叩き台の並び順で）、無ければ承認。
+   しきい値は判断画面の既存 warns（ret<45 / comp<50 / funds<500000 / bcp<30 / 稼働）に整合。 */
+function advisorComment(month, s, bd, mix) {
+  if (month <= 3) return { tone: "guide", text: ADVISOR_LINES.guide[month] };
+
+  // 現金の先読み（介護報酬は約2ヶ月遅れ＝pipeline で入金）
+  const cashEnd  = s.funds + (s.pipeline?.[0] || 0) - bd.expense;
+  const cashEnd2 = cashEnd + (s.pipeline?.[1] || 0) - bd.expense;
+  const cashRisk = Math.min(cashEnd, cashEnd2) < 500000;
+
+  // 最も深刻な1件だけ（説教くさくならないよう）。叩き台の優先順に評価。
+  if (cashRisk)               return { tone: "alert", text: ADVISOR_LINES.cash };
+  if (s.ret < 45)             return { tone: "alert", text: ADVISOR_LINES.ret };
+  if (bd.occRate < 0.6)       return { tone: "soft",  text: ADVISOR_LINES.occ };
+  if ((bd.uplift || 0) === 0) return { tone: "soft",  text: ADVISOR_LINES.kasan };
+  if (s.comp < 50)            return { tone: "alert", text: ADVISOR_LINES.comp };
+  if (s.bcp < 30)             return { tone: "soft",  text: ADVISOR_LINES.bcp };
+  if ((mix?.avgLevel || 0) > 2.8) return { tone: "soft", text: ADVISOR_LINES.heavy };
+
+  // 懸念なし：最終月は通期の振り返りへ、それ以外は承認（褒めで新人を支える）
+  if (month >= App.totalMonths) return { tone: "good", text: ADVISOR_LINES.final };
+  return { tone: "good", text: ADVISOR_LINES.good };
+}
+
 /* ===================== 画面描画層 ===================== */
 /* =========================================================================
    レンダリング層（バニラJS・外部依存ゼロ）
@@ -1579,6 +1642,8 @@ function viewDecide() {
   const rw = rl === "low" ? "低" : rl === "mid" ? "中" : "高";
   const recv = s.pipeline[0] + s.pipeline[1];
   const drift = policyDrift(s.policy, d);
+  const advMix = analyzeMix(s.mix);
+  const adv = advisorComment(s.month, s, bd, advMix);
 
   return `<div class="frame">
     <div class="phead">
@@ -1594,6 +1659,20 @@ function viewDecide() {
         ${App.lastResult ? `<div class="phead-pl ${App.lastResult.breakdown.pl >= 0 ? "profit" : "loss"}">前月損益 ${signYen(App.lastResult.breakdown.pl)}</div>` : ""}
       </div>
     </div>
+
+    ${adv ? `<div class="advisor adv-${adv.tone}">
+      <div class="adv-avatar" aria-hidden="true">
+        <svg viewBox="0 0 40 40" width="40" height="40">
+          <circle cx="20" cy="20" r="20" fill="var(--teal)"/>
+          <circle cx="20" cy="16" r="7" fill="#fff" opacity=".95"/>
+          <path d="M8 34 q12 -12 24 0 z" fill="#fff" opacity=".95"/>
+        </svg>
+      </div>
+      <div class="adv-body">
+        <div class="adv-name">${ADVISOR_NAME}</div>
+        <div class="adv-text">${esc(adv.text)}</div>
+      </div>
+    </div>` : ""}
 
     <div class="meters">
       ${meter("満足度（ケアの質）", s.sat, 100, "var(--amber)")}
