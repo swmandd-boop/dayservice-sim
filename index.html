@@ -1,0 +1,1995 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>デイサービス経営シミュレーター｜自事業所の経営課題を自己診断｜株式会社福祉マネジメント＆デザイン</title>
+<meta name="description" content="デイサービスの経営を12ヶ月シミュレーションし、自事業所の経営課題を自己診断できる無料ツール。稼働率・要介護度別単価・加算・人材定着・資金繰りが、どう収支に跳ね返るかを体験できます。">
+<meta property="og:title" content="デイサービス経営シミュレーション">
+<meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0e5e5a">
+<meta name="version" content="v3-2026-07-14">
+<style>
+
+      :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
+        --amber:#d98a2b;--green:#2f8f6b;--clay:#c15334;--violet:#6a5aa8;--slate:#4a7396;--muted:#6b7d7a;
+        --font:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif;}
+      body{min-height:100%;background:radial-gradient(120% 90% at 100% 0%,#f0f4f2 0%,var(--paper) 55%);
+        padding:24px 16px;font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;box-sizing:border-box;}
+      .frame{max-width:640px;margin:0 auto;}
+      *{box-sizing:border-box;font-variant-numeric:tabular-nums;}
+      .cta{width:100%;margin-top:22px;padding:16px;border:none;border-radius:14px;background:var(--teal);color:#fff;
+        font-size:16px;font-weight:700;letter-spacing:.02em;cursor:pointer;font-family:var(--font);transition:transform .08s,background .2s;}
+      .cta:hover{background:var(--teal-d);}.cta:active{transform:translateY(1px);}
+
+      .start{padding:12px 4px;}
+      .eyebrow{font-size:12px;letter-spacing:.22em;color:var(--teal);font-weight:700;text-transform:uppercase;margin-bottom:14px;}
+      .title{font-size:34px;line-height:1.28;font-weight:800;margin:0 0 18px;}
+      .title-accent{color:var(--teal);border-bottom:6px solid var(--amber);padding-bottom:2px;}
+      .lead{font-size:15px;line-height:1.9;color:#3a4f56;margin:0 0 28px;}
+      .mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+      .mode-card{text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:20px;cursor:pointer;font-family:var(--font);transition:border-color .2s,transform .08s;}
+      .mode-card:hover{border-color:var(--teal);transform:translateY(-2px);}
+      .mode-card.primary{border-color:var(--teal);box-shadow:0 8px 24px -14px rgba(14,94,90,.6);}
+      .mode-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--teal);background:#e3efec;padding:3px 10px;border-radius:20px;}
+      .mode-len{font-size:26px;font-weight:800;margin:10px 0 6px;}.mode-desc{font-size:12.5px;line-height:1.7;color:var(--muted);}
+      .fineprint{margin-top:24px;font-size:11.5px;color:var(--muted);}
+
+      .phead{display:flex;justify-content:space-between;align-items:flex-start;background:var(--ink);color:#fff;border-radius:16px;padding:18px 20px;margin-bottom:16px;}
+      .phead-month{font-size:20px;font-weight:800;}.phead-total{font-size:13px;font-weight:500;color:#9db4b0;}
+      .phead-progress{display:flex;gap:4px;margin-top:10px;flex-wrap:wrap;}
+      .pip{width:14px;height:5px;border-radius:3px;background:#33484f;}.pip.done{background:var(--green);}.pip.now{background:var(--amber);}
+      .phead-right{text-align:right;}.phead-funds-label{font-size:11px;color:#9db4b0;letter-spacing:.08em;}
+      .phead-funds{font-size:23px;font-weight:800;}.phead-funds.neg{color:#ff9b7a;}
+      .phead-recv{font-size:11px;color:#9db4b0;margin-top:2px;}
+      .phead-pl{font-size:12px;font-weight:700;margin-top:3px;}
+
+      .meters{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+      .meter{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
+      .meter-wide{grid-column:span 2;}
+      .meter-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+      .meter-label{font-size:11.5px;color:var(--muted);font-weight:600;}.meter-val{font-size:17px;font-weight:800;}
+      .meter-track{height:7px;background:#eef2f0;border-radius:5px;overflow:hidden;}
+      .meter-fill{height:100%;border-radius:5px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+      .staff-dots{display:flex;gap:4px;flex-wrap:wrap;}
+      .dot{width:12px;height:12px;border-radius:50%;background:#e3e9e7;border:1px solid var(--line);}
+      .dot.on{background:var(--teal);border-color:var(--teal);}
+
+      .event{border-radius:12px;padding:14px 16px;margin-bottom:14px;border:1px solid;border-left-width:5px;}
+      .ev-good{background:#e9f5ef;border-color:#b6ddc9;border-left-color:var(--green);}
+      .ev-bad{background:#fff7ec;border-color:#f0d3a6;border-left-color:var(--amber);}
+      .ev-disaster{background:#fbeee9;border-color:#f0cabb;border-left-color:var(--clay);}
+      .event-tag{font-size:11px;font-weight:700;letter-spacing:.14em;}
+      .ev-good .event-tag{color:var(--green);}.ev-bad .event-tag{color:var(--amber);}.ev-disaster .event-tag{color:var(--clay);}
+      .event-title{font-size:17px;font-weight:800;margin:4px 0;}
+      .event-desc{font-size:13px;line-height:1.7;color:#5c6360;}
+      .event-mitig{font-size:12px;font-weight:700;color:var(--green);background:#dbf0e5;border-radius:8px;padding:8px 11px;margin-top:9px;line-height:1.6;}
+      .event-nomitig{font-size:12px;font-weight:700;color:var(--clay);background:#f7ded4;border-radius:8px;padding:8px 11px;margin-top:9px;line-height:1.6;}
+      .perma{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+      .perma-chip{font-size:11px;font-weight:700;color:var(--clay);background:#fbeee9;border:1px solid #f0cabb;
+        padding:5px 10px;border-radius:20px;}
+      .ev-choice{background:#f3f1fb;border-color:#cfc7ec;border-left-color:var(--violet);}
+      .ev-choice .event-tag{color:var(--violet);}
+      .choices{display:flex;flex-direction:column;gap:7px;margin-top:11px;}
+      .choice{text-align:left;background:#fff;border:1.5px solid #d8d2ee;border-radius:9px;padding:10px 12px;
+        cursor:pointer;font-family:var(--font);transition:border-color .15s,background .15s;}
+      .choice.on{border-color:var(--violet);background:#ece8f8;}
+      .choice-label{font-size:13px;font-weight:700;color:var(--ink);line-height:1.5;}
+      .choice-sub{font-size:11px;color:#6a628f;margin-top:3px;line-height:1.55;}
+      .chosennote{font-size:12.5px;color:#4b4570;background:#f3f1fb;border:1px solid #cfc7ec;border-radius:10px;
+        padding:11px 14px;margin-bottom:12px;}.chosennote b{font-weight:800;}
+
+      .warns{margin-bottom:14px;display:flex;flex-direction:column;gap:6px;}
+      .warn{font-size:12.5px;color:var(--clay);background:#fbeee9;border-radius:8px;padding:8px 12px;line-height:1.6;}
+
+      /* 経営方針 */
+      .policy{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;}
+      .policy-head{font-size:13px;font-weight:700;margin-bottom:10px;}
+      .policy-head small{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:3px;line-height:1.6;}
+      .policy-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+      .pol{padding:11px 10px;border:1.5px solid var(--line);border-radius:9px;background:#f6f9f7;
+        font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;font-family:var(--font);
+        transition:border-color .15s,background .15s,color .15s;text-align:left;}
+      .pol:hover{border-color:var(--teal);}
+      .pol.on{border-color:var(--teal);background:var(--teal);color:#fff;}
+      .policy-detail{margin-top:11px;padding:11px 13px;background:#f2f6f4;border-radius:9px;}
+      .pd-desc{font-size:12px;line-height:1.7;color:var(--ink);}
+      .pd-trade{font-size:11.5px;line-height:1.6;color:var(--clay);margin-top:6px;font-weight:600;}
+      .policy-drift{margin-top:10px;padding:10px 13px;background:#fff7ec;border:1px solid #f0d3a6;border-radius:9px;}
+      .policy-drift b{font-size:11.5px;color:var(--amber);display:block;margin-bottom:4px;}
+      .pd-item{font-size:11.5px;color:#6a5a3a;line-height:1.7;}
+
+      .levers{display:flex;flex-direction:column;gap:14px;}
+      .lever{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;}
+      .lever-head{font-size:13px;font-weight:700;margin-bottom:10px;}
+      .seg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:#eef2f0;padding:4px;border-radius:10px;}
+      .seg-btn{padding:10px 4px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;font-family:var(--font);transition:background .15s,color .15s;}
+      .seg-btn.active{background:var(--teal);color:#fff;box-shadow:0 2px 8px -3px rgba(14,94,90,.7);}
+      .lever-hint{font-size:11.5px;color:var(--muted);margin-top:9px;line-height:1.6;}
+
+      .initiatives{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px;}
+      .init-head{font-size:13px;font-weight:700;margin-bottom:10px;}
+      .init-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+      .init-chip{text-align:left;background:#f6f9f7;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;cursor:pointer;font-family:var(--font);transition:border-color .15s,background .15s;}
+      .init-chip.on{border-color:var(--teal);background:#e8f2ef;}
+      .init-chip-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px;}
+      .init-name{font-size:13.5px;font-weight:700;color:var(--ink);}.init-cost{font-size:11.5px;font-weight:700;color:var(--clay);white-space:nowrap;}
+      .init-desc{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.55;}
+      .init-total{font-size:12.5px;color:var(--muted);margin-top:11px;text-align:right;}.init-total b{color:var(--ink);font-size:14px;}
+
+      /* 管理者の工数 */
+      .hours{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px;}
+      .hours-head{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:700;margin-bottom:12px;}
+      .hours-budget{font-size:12px;color:var(--muted);font-weight:700;}
+      .hours-care{background:#f2f6f4;border-radius:10px;padding:11px 13px;margin-bottom:12px;}
+      .hc-row{display:flex;justify-content:space-between;align-items:baseline;}
+      .hc-label{font-size:12.5px;font-weight:700;color:var(--ink);}
+      .hc-val{font-size:17px;font-weight:800;color:var(--clay);}
+      .hc-note{font-size:11px;color:var(--clay);line-height:1.6;margin-top:5px;}
+      .hc-note.ok{color:var(--green);}
+      .hc-remain{font-size:12px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--line);}
+      .hc-remain b{font-size:15px;color:var(--ink);}
+      .hc-deleg{color:var(--teal);font-weight:700;}
+      .hours-warn{font-size:12px;line-height:1.6;color:var(--clay);background:#fbeee9;border:1px solid #f0cabb;
+        border-radius:9px;padding:9px 12px;margin-bottom:12px;}
+      .hsliders{display:flex;flex-direction:column;gap:12px;}
+      .hslider{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#f9fbfa;}
+      .hslider.full{border-color:#b6ddc9;background:#f2f9f5;}
+      .hslider.part{border-color:#f0d3a6;background:#fffaf2;}
+      .hslider.short{border-color:#f0cabb;background:#fdf3ef;}
+      .hs-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+      .hs-label{font-size:12.5px;font-weight:700;}
+      .hs-num{font-size:14px;font-weight:800;}.hs-num small{font-size:11px;color:var(--muted);font-weight:600;}
+      .hslider input[type=range]{width:100%;margin:2px 0 6px;accent-color:var(--teal);}
+      .hs-bar{height:5px;background:#e6ebe9;border-radius:4px;overflow:hidden;}
+      .hs-fill{height:100%;border-radius:4px;transition:width .25s;}
+      .full .hs-fill{background:var(--green);}.part .hs-fill{background:var(--amber);}.short .hs-fill{background:var(--clay);}
+      .hs-pen{font-size:10.5px;line-height:1.55;color:var(--muted);margin-top:6px;}
+      .short .hs-pen{color:var(--clay);font-weight:600;}
+
+      /* 結果画面：時間レポート */
+      .hreport{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:14px;}
+      .hreport-title{font-size:12.5px;font-weight:800;margin-bottom:11px;}
+      .hr-care{font-size:12px;line-height:1.6;color:var(--clay);background:#fbeee9;border-radius:8px;padding:9px 11px;margin-bottom:10px;}
+      .hr-rows{display:flex;flex-direction:column;gap:6px;}
+      .hr-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;font-size:12.5px;padding:7px 10px;border-radius:8px;}
+      .hr-row.full{background:#f2f9f5;}.hr-row.part{background:#fffaf2;}.hr-row.short{background:#fdf3ef;}
+      .hr-label{font-weight:700;}
+      .hr-num{color:var(--muted);font-size:11.5px;font-weight:700;}
+      .hr-badge{font-size:11px;font-weight:800;padding:2px 9px;border-radius:20px;white-space:nowrap;}
+      .full .hr-badge{color:var(--green);background:#dbf0e5;}
+      .part .hr-badge{color:var(--amber);background:#fbecd6;}
+      .short .hr-badge{color:var(--clay);background:#f7ded4;}
+      .hr-alert{font-size:12px;line-height:1.6;color:var(--clay);background:#fbeee9;border:1px solid #f0cabb;
+        border-radius:8px;padding:9px 11px;margin-top:10px;font-weight:700;}
+
+      .preview{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+      .pv-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;}
+      .pv-label{font-size:11.5px;font-weight:700;color:var(--muted);display:block;}
+      .pv-occ{font-size:26px;font-weight:800;color:var(--teal);}.pv-occ.hot{color:var(--clay);}
+      .pv-sub{font-size:11px;color:var(--muted);margin-left:6px;}
+      .pv-risk{font-size:22px;font-weight:800;}.pv-risk small{font-size:12px;font-weight:600;color:var(--muted);}
+      .risk-bar{height:6px;background:#eef2f0;border-radius:5px;overflow:hidden;margin-top:7px;}.risk-fill{height:100%;border-radius:5px;transition:width .3s;}
+      .risk-low .pv-risk{color:var(--green);}.risk-low .risk-fill{background:var(--green);}
+      .risk-mid .pv-risk{color:var(--amber);}.risk-mid .risk-fill{background:var(--amber);}
+      .risk-high .pv-risk{color:var(--clay);}.risk-high .risk-fill{background:var(--clay);}
+
+      .result-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:6px;}
+      .result-month{font-size:14px;font-weight:700;color:var(--muted);}
+      .result-verdict{font-size:23px;font-weight:800;}.result-verdict.profit{color:var(--green);}.result-verdict.loss{color:var(--clay);}
+      .tug{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;}
+      .tug-cap{font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:12px;}
+      .tug-row{display:flex;align-items:center;gap:10px;}.tug-row+.tug-row{margin-top:12px;}
+      .tug-label{width:32px;font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0;}
+      .tug-track{flex:1;height:22px;background:#eef2f0;border-radius:6px;overflow:hidden;}
+      .tug-fill{height:100%;border-radius:6px;transition:width .7s cubic-bezier(.4,0,.2,1);}
+      .tug-fill.income{background:linear-gradient(90deg,var(--teal),var(--green));}
+      .tug-fill.expense{background:linear-gradient(90deg,#d98a2b,var(--clay));}
+      .tug-num{width:96px;text-align:right;font-size:13px;font-weight:800;flex-shrink:0;}
+
+      .bd-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+      .bd-col{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;}
+      .bd-col-title{font-size:12px;font-weight:800;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line);}
+      .income-t{color:var(--green);}.expense-t{color:var(--clay);}
+      .row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:#3a4f56;gap:8px;}
+      .row-v{font-weight:700;color:var(--ink);white-space:nowrap;}
+      .bd-note{font-size:11px;color:var(--clay);margin-top:8px;line-height:1.6;}
+
+      .cash{background:#eef4fb;border:1px solid #c9d8ec;border-radius:12px;padding:15px;margin-bottom:14px;}
+      .cash-title{font-size:12.5px;font-weight:800;color:#2b4a72;margin-bottom:10px;}.cash-title small{font-weight:600;color:#5b7196;}
+      .cash-rows .row{color:#3a4f56;}
+      .cash-net,.cash-bal{display:flex;justify-content:space-between;font-size:13.5px;font-weight:800;padding:7px 0;border-top:1px solid #c9d8ec;margin-top:4px;}
+      .cash-net .profit,.cash-bal .profit{color:var(--green);}.cash-net .loss{color:var(--clay);}
+      .cash-bal{font-size:15px;}
+      .cash-note{font-size:11.5px;line-height:1.6;color:#2b4a72;margin-top:10px;background:#dde9f7;border-radius:8px;padding:9px 11px;}
+      .cash-warn{font-size:12px;line-height:1.6;color:var(--clay);margin-top:10px;background:#fbeee9;border:1px solid #f0cabb;border-radius:8px;padding:9px 11px;font-weight:700;}
+
+      .applied{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+      .applied-label{font-size:11.5px;font-weight:700;color:var(--muted);}
+      .applied-chip{font-size:12px;font-weight:700;color:var(--teal);background:#e8f2ef;border:1px solid #bcdcd5;padding:4px 11px;border-radius:20px;}
+      .auditnote{font-size:12.5px;line-height:1.7;color:#4b4570;background:#f3f1fb;border:1px solid #cfc7ec;border-radius:10px;padding:11px 14px;margin-bottom:12px;}
+      .accident{font-size:12.5px;line-height:1.7;color:var(--clay);background:#fbeee9;border:1px solid #f0cabb;border-radius:10px;padding:11px 14px;margin-bottom:12px;}
+
+      .delta-panel{background:#f2f6f4;border:1px solid var(--line);border-radius:12px;padding:16px;}
+      .delta-panel-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:12px;}
+      .delta-rows{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;}
+      .drow{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+      .drow-label{font-size:12.5px;font-weight:700;}.drow-nums{font-size:12.5px;color:var(--muted);margin-left:auto;}.drow-nums b{color:var(--ink);}
+      .delta{font-size:11.5px;font-weight:800;padding:2px 7px;border-radius:20px;flex-shrink:0;}
+      .delta.up{color:var(--green);background:#e4f2ec;}.delta.down{color:var(--clay);background:#fbeee9;}.delta.flat{color:var(--muted);background:#e9efec;}
+      .churn{margin-top:12px;font-size:12.5px;line-height:1.7;color:var(--clay);background:#fbeee9;border-radius:8px;padding:10px 12px;}
+
+      .end{padding:8px 4px;}
+      .end-tier{font-size:40px;font-weight:800;margin:8px 0 22px;}
+      .t-great{color:var(--green);}.t-good{color:var(--teal);}.t-warn{color:var(--amber);}.t-bad{color:var(--clay);}
+      .end-figures{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+      .end-fig{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;}
+      .end-fig-label{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px;}
+      .end-fig-val{font-size:23px;font-weight:800;}.end-fig-val.profit{color:var(--green);}.end-fig-val.loss{color:var(--clay);}
+      .end-cashwarn{font-size:12.5px;line-height:1.7;color:var(--clay);background:#fbeee9;border:1px solid #f0cabb;border-radius:10px;padding:12px 14px;margin-bottom:24px;}
+      .journey{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:24px;overflow-x:auto;}
+      .journey-title{font-size:13px;font-weight:800;margin-bottom:12px;}
+      .journey-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+      .journey-table th{text-align:left;color:var(--muted);font-weight:700;font-size:10.5px;padding:6px 6px;border-bottom:1.5px solid var(--line);white-space:nowrap;}
+      .journey-table td{padding:7px 6px;border-bottom:1px solid #eef2f0;white-space:nowrap;}
+      .journey-table td.profit{color:var(--green);font-weight:700;}.journey-table td.loss{color:var(--clay);font-weight:700;}
+      .j-kasan{color:var(--violet);font-weight:700;font-size:11px;}
+      .j-pol{color:var(--teal);font-weight:700;font-size:11px;}
+      .j-ev{font-size:11px;font-weight:700;max-width:140px;overflow:hidden;text-overflow:ellipsis;}
+      .j-good{color:var(--green);}.j-bad{color:var(--amber);}.j-disaster{color:var(--clay);}
+      .j-choice{color:var(--violet);}.j-none{color:#c3ccc9;}
+
+      @media (max-width:520px){
+        .mode-cards,.meters,.bd-grid,.end-figures,.delta-rows,.init-grid,.preview{grid-template-columns:1fr;}
+        .meter-wide{grid-column:span 1;}.title{font-size:28px;}
+      }
+    
+      /* --- 対象者コース選択 --- */
+      .mode-head{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;letter-spacing:.05em;}
+      .mode-cards{display:grid;grid-template-columns:1fr;gap:12px;}
+      .mode-card{text-align:left;}
+      .mode-card .mode-tag{font-size:11px;}
+      .mode-card .mode-len{font-size:22px;margin:8px 0 6px;}
+      .mode-card .mode-desc b{color:var(--ink);}
+
+      /* --- 組織の健全性 --- */
+      .health{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:22px;}
+      .health-title{font-size:13px;font-weight:800;margin-bottom:13px;}
+      .health-meters{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:14px;}
+      .hm{text-align:center;padding:10px 4px;border-radius:9px;border:1px solid var(--line);}
+      .hm-n{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-bottom:3px;}
+      .hm-v{display:block;font-size:17px;font-weight:800;}
+      .hm.ok{background:#f2f9f5;border-color:#b6ddc9;}.hm.ok .hm-v{color:var(--green);}
+      .hm.mid{background:#fffaf2;border-color:#f0d3a6;}.hm.mid .hm-v{color:var(--amber);}
+      .hm.ng{background:#fdf3ef;border-color:#f0cabb;}.hm.ng .hm-v{color:var(--clay);}
+      .rot{font-size:13px;line-height:1.85;color:#8a3d24;background:#fbeee9;border:1px solid #f0cabb;
+        border-left:5px solid var(--clay);border-radius:10px;padding:14px 16px;margin-bottom:13px;}
+      .rot b{color:var(--clay);}
+      .health-issues{background:#f2f6f4;border-radius:10px;padding:13px 15px;}
+      .hi-head{font-size:11.5px;font-weight:800;color:var(--muted);margin-bottom:8px;}
+      .hi{font-size:12.5px;line-height:1.75;padding:2px 0;}
+      .hi.bad{color:var(--clay);font-weight:700;}
+      .hi.warn{color:#8a6a3a;}
+      .health-good{font-size:12.5px;line-height:1.7;color:var(--green);background:#f2f9f5;
+        border:1px solid #b6ddc9;border-radius:10px;padding:12px 14px;}
+
+      @media (max-width:520px){
+        .health-meters{grid-template-columns:repeat(3,1fr);}
+      }
+
+      /* --- 変化の理由 --- */
+      .delta-panel-title small{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:3px;}
+      .why{background:#fff;border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-bottom:9px;}
+      .why.up{border-left:4px solid var(--green);}
+      .why.down{border-left:4px solid var(--clay);}
+      .why.flat{border-left:4px solid #d5ddda;}
+      .why-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+      .why-label{font-size:13px;font-weight:800;color:var(--ink);}
+      .why-label small{display:block;font-size:10.5px;font-weight:500;color:var(--muted);margin-top:2px;line-height:1.5;}
+      .why-nums{font-size:12.5px;color:var(--muted);white-space:nowrap;}
+      .why-nums b{color:var(--ink);font-size:14px;}
+      .why-list{display:flex;flex-direction:column;gap:4px;}
+      .why-item{display:flex;gap:9px;align-items:baseline;font-size:12px;line-height:1.65;padding:3px 8px;border-radius:6px;}
+      .why-item.pos{background:#f2f9f5;}
+      .why-item.neg{background:#fdf3ef;}
+      .why-v{font-weight:800;font-size:12.5px;min-width:32px;text-align:right;flex-shrink:0;}
+      .why-item.pos .why-v{color:var(--green);}
+      .why-item.neg .why-v{color:var(--clay);}
+      .why-t{color:#3a4f56;}
+      .why-none{font-size:11.5px;color:var(--muted);line-height:1.6;padding:3px 0;}
+      .why-drift{font-size:11px;color:#6a5a3a;background:#fff7ec;border-radius:6px;padding:7px 9px;margin-top:7px;line-height:1.6;}
+
+      /* --- 資金繰りの見通し --- */
+      .cashflow{background:#eef4fb;border:1px solid #c9d8ec;border-radius:12px;padding:15px;margin-top:14px;}
+      .cashflow.risky{background:#fdf3ef;border-color:#f0cabb;}
+      .cf-head{font-size:13px;font-weight:800;color:#2b4a72;margin-bottom:11px;}
+      .cashflow.risky .cf-head{color:#8a3d24;}
+      .cf-head small{display:block;font-size:10.5px;font-weight:500;color:#5b7196;margin-top:3px;line-height:1.6;}
+      .cashflow.risky .cf-head small{color:#9a6a55;}
+      .cf-track{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+      .cf-col{background:#fff;border:1px solid #c9d8ec;border-radius:9px;padding:10px 8px;text-align:center;}
+      .cf-col.warn{border-color:#f0d3a6;background:#fffaf2;}
+      .cf-col.ng{border-color:#f0cabb;background:#fdf3ef;}
+      .cf-when{font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:4px;}
+      .cf-bal{font-size:14px;font-weight:800;color:var(--ink);}
+      .cf-col.warn .cf-bal{color:var(--amber);}
+      .cf-col.ng .cf-bal{color:var(--clay);}
+      .cf-in{font-size:10px;color:var(--muted);margin-top:3px;}
+      .cf-warn{font-size:11.5px;line-height:1.7;color:#8a3d24;background:#f7ded4;border-radius:8px;padding:9px 11px;margin-top:10px;font-weight:600;}
+      .cf-ok{font-size:11.5px;line-height:1.7;color:#2b4a72;background:#dde9f7;border-radius:8px;padding:9px 11px;margin-top:10px;}
+      .cf-recv{font-size:11.5px;color:#2b4a72;margin-top:10px;padding-top:9px;border-top:1px solid #c9d8ec;}
+      .cashflow.risky .cf-recv{color:#8a3d24;border-top-color:#f0cabb;}
+      .cf-recv b{font-size:13px;}
+      .cf-note{color:var(--muted);font-size:10.5px;}
+
+      .mode-card .mode-len{font-size:19px;font-weight:800;color:var(--teal);margin:9px 0 8px;line-height:1.4;}
+      .mode-card.primary .mode-len{color:var(--teal);}
+      .mode-card .mode-desc{font-size:12.5px;line-height:1.85;}
+      .mode-meta{display:block;margin-top:9px;padding-top:8px;border-top:1px solid var(--line);
+        font-size:11px;color:var(--muted);font-weight:600;}
+
+      /* --- 利用者構成（要介護度別） --- */
+      .mixpanel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:14px;}
+      .mix-head{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:800;margin-bottom:13px;flex-wrap:wrap;gap:6px;}
+      .mix-sum{font-size:11.5px;font-weight:600;color:var(--muted);}
+      .mix-sum b{font-size:15px;color:var(--teal);}
+      .mix-bars{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:13px;}
+      .mx{text-align:center;}
+      .mx-bar{height:52px;display:flex;align-items:flex-end;justify-content:center;
+        background:#f0f4f2;border-radius:5px;overflow:hidden;margin-bottom:4px;}
+      .mx-fill{width:100%;border-radius:5px 5px 0 0;transition:height .4s;}
+      .lv-yousien{background:#9fc4bd;} .lv-k1{background:#6ba99f;} .lv-k2{background:#3f8d80;}
+      .lv-k3{background:#d98a2b;} .lv-k4{background:#c9662c;} .lv-k5{background:#c15334;}
+      .mx-n{font-size:13px;font-weight:800;color:var(--ink);}
+      .mx-l{font-size:9.5px;color:var(--muted);font-weight:700;}
+      .mx-p{font-size:9px;color:#9aa8a5;margin-top:1px;}
+      .mix-calc{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;padding:11px 12px;
+        background:#f2f6f4;border-radius:9px;margin-bottom:11px;}
+      .mc{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;}
+      .mc-l{color:var(--muted);font-weight:600;}
+      .mc-v{font-weight:800;color:var(--ink);font-size:13px;}
+      .mix-bn{font-size:12px;line-height:1.75;border-radius:9px;padding:11px 13px;}
+      .mix-bn b{font-weight:800;}
+      .bn-staff{background:#fff7ec;border:1px solid #f0d3a6;color:#7a5f30;}
+      .bn-staff b{color:var(--amber);}
+      .bn-cap{background:#f3f1fb;border:1px solid #cfc7ec;color:#4b4570;}
+      .bn-cap b{color:var(--violet);}
+      .bn-demand{background:#eef4fb;border:1px solid #c9d8ec;color:#2b4a72;}
+      .bn-demand b{color:var(--slate);}
+      .j-adm{color:var(--slate);font-weight:700;font-size:11px;}
+      @media (max-width:520px){
+        .mix-calc{grid-template-columns:1fr;}
+        .mx-p{display:none;}
+      }
+
+      /* --- 課題レポート（出口） --- */
+      .report{padding:6px 2px;}
+      .rep-title{font-size:27px;line-height:1.4;font-weight:800;margin:10px 0 16px;}
+      .rep-lead{font-size:13.5px;line-height:1.95;color:#3a4f56;margin:0 0 26px;}
+      .rep-lead b{color:var(--ink);}
+      .rep-sec{margin-bottom:24px;}
+      .rs-head{margin-bottom:12px;}
+      .rs-tag{display:inline-block;font-size:13px;font-weight:800;padding:6px 14px;border-radius:20px;}
+      .self .rs-tag{color:#1f5e46;background:#dbf0e5;}
+      .support .rs-tag{color:#8a3d24;background:#f7ded4;}
+      .rs-note{display:block;font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.6;}
+      .issue{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 16px;margin-bottom:10px;
+        border-left:4px solid var(--green);}
+      .issue.sup{border-left-color:var(--clay);}
+      .issue-area{display:inline-block;font-size:10.5px;font-weight:800;color:var(--clay);
+        background:#fbeee9;padding:3px 9px;border-radius:5px;margin-bottom:7px;}
+      .issue-title{font-size:15px;font-weight:800;color:var(--ink);margin-bottom:7px;line-height:1.5;}
+      .issue-fact{font-size:12.5px;line-height:1.85;color:#3a4f56;margin-bottom:9px;}
+      .issue-action{font-size:12.5px;line-height:1.85;color:#1f5e46;background:#f2f9f5;border-radius:8px;padding:10px 12px;}
+      .issue-action b{display:block;font-size:11px;margin-bottom:3px;color:var(--green);}
+      .issue-why{font-size:12.5px;line-height:1.85;color:#8a3d24;background:#fdf3ef;border-radius:8px;padding:10px 12px;}
+      .rep-clean{font-size:13px;line-height:1.95;color:#1f5e46;background:#f2f9f5;border:1px solid #b6ddc9;
+        border-radius:12px;padding:16px 18px;margin-bottom:24px;}
+
+      /* 導線 */
+      .cta-box{background:var(--ink);color:#fff;border-radius:16px;padding:22px 20px;margin-bottom:24px;}
+      .cb-title{font-size:17px;font-weight:800;margin-bottom:11px;}
+      .cb-body{font-size:12.5px;line-height:1.95;color:#c8d6d3;}
+      .cb-body b{color:#fff;}
+      .cb-btn{display:block;text-align:center;margin-top:16px;padding:15px;border-radius:12px;
+        background:var(--amber);color:#fff;font-size:15px;font-weight:800;text-decoration:none;
+        transition:background .2s;}
+      .cb-btn:hover{background:#c47a22;}
+      .cb-note{font-size:10.5px;color:#8fa5a1;margin-top:10px;text-align:center;}
+
+      .rep-replay{background:#f2f6f4;border:1px solid var(--line);border-radius:14px;padding:18px;}
+      .rr-title{font-size:14px;font-weight:800;margin-bottom:8px;}
+      .rr-body{font-size:12.5px;line-height:1.9;color:#3a4f56;margin-bottom:6px;}
+      .rr-body b{color:var(--ink);}
+      .cta.ghost{background:transparent;color:var(--muted);border:1.5px solid var(--line);margin-top:10px;font-size:14px;}
+      .cta.ghost:hover{background:#eef2f0;color:var(--ink);}
+
+      .rep-omit{font-size:11.5px;color:var(--muted);line-height:1.7;background:#f2f6f4;
+        border-radius:8px;padding:10px 12px;margin-bottom:20px;}
+
+html{margin:0;padding:0;}
+body{padding:24px 16px;margin:0;}
+.frame{max-width:640px;margin:0 auto;}
+.phead{display:flex;justify-content:space-between;align-items:flex-start;}
+.jscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+button{font-family:var(--font);}
+.swmd-foot{max-width:640px;margin:0 auto;padding:30px 0 44px;font-size:11.5px;line-height:1.95;color:var(--muted);}
+.swmd-foot hr{border:none;border-top:1px solid var(--line);margin:0 0 18px;}
+.swmd-foot b{color:var(--ink);display:block;margin-bottom:3px;}
+.swmd-foot p{margin:0 0 14px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="swmd-foot">
+  <hr>
+  <p>
+    <b>本ツールについて</b>
+    研修・学習を目的とした教材です。登場する単価・加算・費用などの数値は、経営の構造を体感しやすくするために
+    <strong>簡略化した架空のモデル</strong>であり、実際の介護報酬・人員配置基準・各種加算の算定要件とは異なります。
+    実務上の判断は、必ず最新の告示・通知および所管自治体の指導に基づいて行ってください。
+  </p>
+  <p>
+    <b>プライバシー</b>
+    本ツールはすべてブラウザ内で動作します。操作した内容がサーバーへ送信・保存されることはありません。
+  </p>
+  <p>提供：株式会社福祉マネジメント＆デザイン</p>
+</div>
+<script>
+"use strict";
+/* ===================== ゲームロジック層 ===================== */
+/* =========================================================================
+   デイサービス経営シミュレーション（研修用プロトタイプ v3）
+   ---------------------------------------------------------------------------
+   経営実態を反映した要素：
+   ・定員稼働率（管理者が最も見るKPI）と定員上限
+   ・満足度/定着度/適正運営度は「水準」に自然収束（放置すると戻る＝維持が要る）
+   ・人員配置基準（利用者数に対する必要職員。割ると加算不可・適正運営度低下）
+   ・過密運営ペナルティ（定員ギリギリは質・定着を削り事故を招く）
+   ・介護報酬は約2ヶ月遅れで入金 → 発生損益(黒字/赤字)と手元現金が乖離する
+   ★ 係数はすべて CONFIG に集約。ここを触ればバランス調整できる。
+   ========================================================================= */
+
+const CONFIG = {
+  base: {
+    initFunds: 4_000_000, initSat: 60, initStaff: 6, initRet: 60, initComp: 60,
+    // 開始時の利用者構成（要介護度別・計40名）
+    initMix: { yousien: 4, k1: 10, k2: 12, k3: 8, k4: 4, k5: 2 },
+    mixShift: 0.18, // 受入方針に応じて構成が毎月このくらい寄っていく
+    baseThroughput: 78, // 職員1人が月に回せる回数（要介護度の手間で割る）
+    fixedCost: 1_750_000, staffCost: 280_000, maxDaysPerUser: 12,
+    teiin: 25, operatingDays: 22, // 定員 × 稼働日 = 月間定員回数
+    usersMin: 20, usersMax: 60, staffMin: 2, staffMax: 12, retBomb: 40,
+    receivableSeed: 3_400_000, // 開始時の売掛（過去2ヶ月分の報酬）
+    initBcp: 25, bcpDecay: 2, // BCP対策度（備え）と月次の自然減衰
+    // staffCostUp / priceDown は最低賃金・報酬改定カードで恒久的に加算される
+    drawRate: 0.75, // 毎月イベントカードを引く確率
+    managerHours: 160, // 管理者の月間持ち時間
+    managerBaseCare: 40, // 管理者が常に現場に入る時間（デイの管理者は兼務が実態）
+    accident: { dSat: 12, dUsers: 3, dComp: 5, cost: 150_000 },
+  },
+  // ① 受入方針
+  intake: {
+    low: { label: "控えめ", factor: 0.9, satT: 4, retT: 3, compT: 3, hint: "稼働↓／現場に余裕・定着↑・記録が回る" },
+    mid: { label: "標準", factor: 1.0, satT: 0, retT: 0, compT: 0, hint: "標準的な受入" },
+    high: { label: "積極", factor: 1.12, satT: -8, retT: -8, compT: -6, hint: "稼働↑／現場疲弊・定着↓・記録が後回し" },
+  },
+  // ② ケアの手厚さ（満足度と変動費に効く。単価は要介護度で決まる）
+  care: {
+    basic: { label: "基本", thruMult: 1.15, varCost: 1_000, satT: 44, hint: "コストを抑える／満足度が下がり、利用者が離れていく" },
+    standard: { label: "標準", thruMult: 1.0, varCost: 1_200, satT: 60, hint: "基準どおりのケア" },
+    premium: { label: "手厚い", thruMult: 0.82, varCost: 1_700, satT: 80, hint: "満足度が上がる／手間が増え、職員1人が回せる回数は減る" },
+  },
+  // ③ 受入層（どの要介護度を積極的に受け入れるか）＝ 単価を決める最大の要因
+  admission: {
+    light: { label: "軽度中心", target: "light",
+      hint: "要支援・要介護1-2が中心／単価は低いが手間も少ない。頭数を集めないと収入にならない" },
+    mixed: { label: "バランス", target: "mixed",
+      hint: "幅広く受け入れる／標準的な構成" },
+    heavy: { label: "重度対応", target: "heavy",
+      hint: "要介護3-5を積極的に／単価は高く来所も安定。ただし手間がかかり、職員が足りないと回せない" },
+  },
+  // ③ 人員体制
+  staffing: {
+    cut: { label: "絞る", dStaff: -1, retT: -18, compT: -6, hint: "人件費↓／負担集中・定着↓↓・記録が滞る" },
+    keep: { label: "維持", dStaff: 0, retT: 0, compT: 0, hint: "現状維持" },
+    hire: { label: "増員", dStaff: 1, retT: 14, compT: 2, hint: "人件費↑／体制に余裕・定着↑・記録が整う" },
+  },
+  // ④ 加算・機能訓練体制（体制＋人員基準を満たして初めて算定）
+  kasan: {
+    none: { label: "取り組まない", uplift: 0, thruPen: 0, reqStaff: 0, reqRet: 0, compT: 0, satT: 0, hint: "加算なし。基本単価のみ" },
+    standard: { label: "標準取得", uplift: 1_100, thruPen: 3, reqStaff: 5, reqRet: 0, compT: -3, satT: 0,
+      hint: "入浴介助・提供体制等／単価+¥1,100・要 職員5名以上" },
+    active: { label: "積極取得", uplift: 2_600, thruPen: 8, reqStaff: 6, reqRet: 55, compT: -6, satT: 4,
+      hint: "個別機能訓練＋LIFE等／単価+¥2,600・要 職員6名&定着55／組織が健全でないと維持できない" },
+  },
+  // ⑤ 追加施策（任意・複数選択可）
+  initiatives: {
+    sales: { key: "sales", label: "営業強化", cost: 120_000, users: 4, hint: "新規利用者↑（−¥120,000）／稼働の余力がなければ活きない" },
+    spotrec: { key: "spotrec", label: "スポットレク", cost: 50_000, satBoost: 10, occBoost: 0.04, hint: "満足度↑・当月の来所↑（−¥50,000）／効果は定着度で変わる" },
+    training: { key: "training", label: "職員研修", cost: 80_000, retBoost: 10, satBoost: 4, compBoost: 4, occMult: 0.97, hint: "定着↑・満足度↑・記録↑（−¥80,000）／当月は現場が薄く稼働微減" },
+    records: { key: "records", label: "記録・書類の整備", cost: 40_000, compBoost: 12, hint: "適正運営度↑（−¥40,000）／実地指導・加算算定への備え" },
+    bcp: { key: "bcp", label: "BCP対策・備蓄", cost: 60_000, bcpBoost: 15, hint: "備え↑（−¥60,000）／災害が来なければ無駄に見える。来たときだけ効く保険" },
+  },
+};
+
+/* ------------------------- 資金繰りの見える化（先行投資の判断材料） -------------------------
+   介護報酬は約2ヶ月遅れで入る。今月の施策費は「今」出ていくが、その効果で増えた収入は
+   2ヶ月後にしか入らない。この時間差を見せないと、先行投資の判断ができない。
+------------------------------------------------------------------------------------- */
+function cashForecast(state, projectedIncome, projectedExpense) {
+  const [in1, in2] = state.pipeline; // in1=来月入金, in2=再来月入金
+  const now = state.funds;
+  // 今月：in1 が入り、今月の支出が出る
+  const m0 = now + in1 - projectedExpense;
+  // 来月以降は支出が今月並みと仮定した粗い見通し
+  const m1 = m0 + in2 - projectedExpense;
+  const m2 = m1 + projectedIncome - projectedExpense;
+  return {
+    incoming: [in1, in2, projectedIncome], // 今月・来月・再来月に入る金額
+    balance: [m0, m1, m2],                  // 各月末の手元現金（見通し）
+    lowest: Math.min(m0, m1, m2),
+    risky: Math.min(m0, m1, m2) < 500000,
+  };
+}
+
+/* ---------------------- 組織の健全性診断（結果を数字だけで見せない） ----------------------
+   黒字でも、満足度・定着度・適正運営度が壊れていれば、その先は続かない。
+   短い期間だと「手を抜いても儲かる」ように見えてしまうため、それを言葉で補う。
+--------------------------------------------------------------------------------- */
+function diagnoseHealth(state) {
+  const issues = [];
+  if (state.ret < 45) issues.push({ level: "bad", text: "職員の定着度が低いままです。この先、離職の連鎖が起きます。" });
+  else if (state.ret < 53) issues.push({ level: "warn", text: "職員の定着度が下がっています。人が抜け始める水準です。" });
+
+  if (state.comp < 35) issues.push({ level: "bad", text: "記録・書類が崩れています。実地指導が入れば加算の返還は避けられません。" });
+  else if (state.comp < 50) issues.push({ level: "warn", text: "記録の整備が追いついていません。監査に耐えられない恐れがあります。" });
+
+  if (state.sat < 40) issues.push({ level: "bad", text: "利用者の満足度が低く、利用者離れが進みます。" });
+  else if (state.sat < 52) issues.push({ level: "warn", text: "満足度が下がっています。稼働率にじわじわ効いてきます。" });
+
+  if (state.staff <= 3) issues.push({ level: "bad", text: "職員数が限界です。基準を満たせず、加算も取れません。" });
+  if (state.bcp < 25) issues.push({ level: "warn", text: "災害への備えがほとんどありません。" });
+  return issues;
+}
+
+/* ============================ 経営方針（プリセット） ============================
+   方針を選ぶと全レバーが自動セットされる。そこから個別に微調整もできる。
+   調整すると「方針からズレている」ことが表示され、掲げた方針と実際の判断の
+   食い違いに気づける（＝研修での重要な振り返り材料）。
+============================================================================== */
+const POLICIES = {
+  quality: {
+    key: "quality", label: "地域密着・質重視",
+    desc: "手厚いケアで満足度を高め、加算をしっかり取りにいく。人にも投資する。",
+    tradeoff: "人件費と事務負担が重い。時間はいつも足りない。",
+    set: { intake: "mid", care: "premium", staffing: "hire", kasan: "active", admission: "heavy",
+      hours: { admin: 30, sales: 15, people: 25, family: 30 } },
+  },
+  revenue: {
+    key: "revenue", label: "収益最大化",
+    desc: "積極的に受け入れ、加算も取る。営業と事務に時間を割く。",
+    tradeoff: "現場が疲弊し、職員ケアが後回しになる。",
+    set: { intake: "high", care: "standard", staffing: "keep", kasan: "active", admission: "light",
+      hours: { admin: 35, sales: 35, people: 15, family: 15 } },
+  },
+  staff: {
+    key: "staff", label: "職員第一",
+    desc: "人を増やし、面談とシフト調整に時間をかける。働きやすさを守る。",
+    tradeoff: "人件費に見合う収益を作れないと、静かに赤字が積もる。",
+    set: { intake: "mid", care: "standard", staffing: "hire", kasan: "standard", admission: "mixed",
+      hours: { admin: 28, sales: 17, people: 40, family: 15 } },
+  },
+  survive: {
+    key: "survive", label: "まずは生き残る",
+    desc: "無理をせず基準どおりに。加算は取れる範囲で取る。バランス配分。",
+    tradeoff: "大きくは伸びない。守りの経営。",
+    set: { intake: "mid", care: "standard", staffing: "keep", kasan: "standard", admission: "mixed",
+      hours: { admin: 30, sales: 25, people: 25, family: 20 } },
+  },
+  cost: {
+    key: "cost", label: "コスト削減",
+    desc: "人件費を抑え、稼働を詰める。目先の支出を切り詰める。",
+    tradeoff: "定着と記録が崩れ、数ヶ月後に必ず返ってくる。",
+    set: { intake: "high", care: "basic", staffing: "cut", kasan: "standard", admission: "light",
+      hours: { admin: 25, sales: 25, people: 25, family: 25 } },
+  },
+};
+
+// 現在の判断が、選んだ方針からどれだけズレているかを調べる
+function policyDrift(policy, decision) {
+  if (!policy) return [];
+  const p = POLICIES[policy]; if (!p) return [];
+  const drift = [];
+  const nm = { intake: "受入方針", admission: "受入層", care: "ケアの手厚さ", staffing: "人員体制", kasan: "加算体制" };
+  for (const k of ["intake", "admission", "care", "staffing", "kasan"]) {
+    if (decision[k] !== p.set[k]) {
+      const from = CONFIG[k][p.set[k]].label, to = CONFIG[k][decision[k]].label;
+      drift.push(`${nm[k]}：${from} → ${to}`);
+    }
+  }
+  return drift;
+}
+
+/* ---------------------- イベントカード（毎月抽選・季節連動） ----------------------
+   good=好機（収益が上がる） / bad=試練（収益が下がる） / disaster=災害（BCPの備えで被害が変わる）
+   season を持つカードはその月にしか出ない。bcpMitig の被害は BCP対策度で軽減される。
+------------------------------------------------------------------------------ */
+const CARDS = [
+  // 好機
+  { id: "cm", type: "good", title: "ケアマネからの紹介", w: 10, users: 5, occMult: 1.06, desc: "地域の居宅から新規の紹介。利用者が増え、今月の来所も伸びる。" },
+  { id: "press", type: "good", title: "地域紙に取り上げられる", w: 6, reqSat: 70, users: 4, satT: 3, occMult: 1.05, desc: "ケアの質が評判に。満足度の高い事業所だけに訪れる好機。" },
+  { id: "cclose", type: "good", title: "競合デイが閉鎖", w: 5, users: 7, occMult: 1.08, desc: "近隣事業所の撤退で利用者が流入。今月から来所が増える。" },
+  { id: "grant", type: "good", title: "補助金の交付決定", w: 6, cash: 500_000, desc: "申請していた補助金が交付。臨時収入が入る。" },
+  { id: "rehire", type: "good", title: "退職者の復職", w: 4, reqRet: 60, dStaff: 1, desc: "働きやすい職場と評判が立ち、元職員が戻ってきた。" },
+  // 試練
+  { id: "compet", type: "bad", title: "近隣に競合オープン", w: 8, users: -5, desc: "利用者が流出。満足度による差別化と回復力が問われる。" },
+  { id: "quit", type: "bad", title: "ベテラン職員の退職", w: 9, dStaff: -1, retShock: -8, desc: "欠員発生。日頃の人への投資が問われる。" },
+  { id: "claim", type: "bad", title: "家族からのクレーム", w: 8, satShock: -8, compMitig: true, desc: "対応に追われる。記録が整っていれば説明責任を果たせる。" },
+  { id: "flu", type: "bad", title: "感染症の流行", w: 9, season: [12, 1, 2], occMult: 0.88, bcpMitig: true, desc: "利用控えで稼働が下がる。感染対策の備えが効く。" },
+  { id: "heat", type: "bad", title: "記録的猛暑", w: 6, season: [7, 8], occMult: 0.93, desc: "夏場の来所減。季節要因も経営に効く。" },
+  { id: "car", type: "bad", title: "送迎車の故障", w: 6, cost: 150_000, occMult: 0.96, desc: "修理費が発生し、送迎が一部回らない。" },
+  { id: "audit", type: "bad", title: "実地指導の通知", w: 6, audit: true, desc: "運営指導が入る。記録・書類の整備状況で結末が変わる。" },
+  { id: "costup", type: "bad", title: "光熱費・食材費の高騰", w: 8, fixedUp: 120_000, desc: "コスト増が収益を圧迫する。" },
+  { id: "cmcut", type: "bad", title: "主要ケアマネからの紹介が止まる", w: 6, reqSatBelow: 65, users: -4,
+    desc: "紹介元の居宅から「最近対応が雑になった」と指摘され、紹介が途絶えた。" },
+  { id: "conflict", type: "bad", title: "職員間の対立が表面化", w: 7, retShock: -10, satShock: -4,
+    desc: "ベテランと若手が衝突。現場の空気が悪く、ケアの質にも影を落とす。" },
+  { id: "wageup", type: "bad", title: "最低賃金の引き上げ", w: 6, staffCostUp: 12_000,
+    desc: "人件費の単価が上がる。以後、毎月の人件費が増加し続ける。" },
+  { id: "revision", type: "bad", title: "介護報酬改定（マイナス）", w: 3, priceDown: 400,
+    desc: "基本報酬が引き下げられた。以後、単価が下がったまま経営することになる。" },
+  { id: "famtrust", type: "good", title: "家族会で高評価", w: 5, reqSat: 70, users: 4, satT: 2, occMult: 1.04,
+    desc: "家族会で「ここに預けてよかった」の声。評判が新規につながる。" },
+  { id: "student", type: "good", title: "実習生が就職を希望", w: 5, reqRet: 60, dStaff: 1,
+    desc: "働きやすい職場と評判が立ち、実習に来た学生が就職を希望した。" },
+
+  // 選択式カード（現場の経営課題。どう対応するかを問う）
+  { id: "harass", type: "choice", title: "利用者家族からのカスタマーハラスメント", w: 8,
+    desc: "特定の利用者家族から職員への暴言・過剰要求が続いています。職員が疲弊し、退職をほのめかす者も出ています。",
+    choices: [
+      { label: "職員を守り毅然と対応する", sub: "契約解除も辞さない。利用者は減る", users: -3, retT: 10, compT: 3 },
+      { label: "利用者を優先し職員に耐えてもらう", sub: "収入は守られるが、職員の心が折れる", retShock: -14, satT: -3 },
+      { label: "外部相談窓口＋複数対応体制をとる", sub: "コストをかけて両立を図る", cost: 80_000, retT: 4, users: -1 },
+    ] },
+  { id: "crash", type: "choice", title: "送迎中の接触事故", w: 7,
+    desc: "送迎車が接触事故を起こしました。利用者に怪我はありませんが、車両修理と行政への報告が必要です。",
+    choices: [
+      { label: "正直に報告し再発防止研修を実施", sub: "痛い出費だが、信頼と体制が残る", cost: 300_000, compT: 8, retT: 3 },
+      { label: "最小限の処理で済ませる", sub: "安く済むが、隠蔽体質が根を張る", cost: 120_000, compT: -12, satT: -4 },
+    ] },
+  { id: "parking", type: "choice", title: "送迎中の駐車禁止トラブル", w: 6,
+    desc: "送迎の乗降をめぐり近隣から苦情が入り、駐禁の取締りも受けました。ドライバーが萎縮しています。",
+    choices: [
+      { label: "近隣に挨拶し乗降場所を再設計", sub: "手間はかかるが地域との関係が改善", cost: 60_000, satT: 2, compT: 3 },
+      { label: "反則金を払って今のまま続ける", sub: "現場のストレスが蓄積していく", cost: 40_000, retT: -6 },
+    ] },
+  { id: "pwharass", type: "choice", title: "管理職のパワハラ疑い", w: 5,
+    desc: "職員から「上司の言動がつらい」と相談が上がりました。放置すれば一斉退職の火種になりかねません。",
+    choices: [
+      { label: "外部窓口を設けて事実確認する", sub: "コストをかけて組織の信頼を守る", cost: 100_000, retT: 8, compT: 6 },
+      { label: "様子を見る", sub: "火種が燃え広がる恐れ", retShock: -16, compT: -8 },
+    ] },
+
+  // 災害（BCPの備えで被害が変わる）
+  { id: "quake", type: "disaster", title: "地震（震度5強）", w: 2, occMult: 0.68, cost: 400_000, bcpMitig: true, desc: "設備損傷と利用休止。備えの有無が明暗を分ける。" },
+  { id: "typhoon", type: "disaster", title: "台風・大雨で休業", w: 4, season: [8, 9, 10], occMult: 0.8, cost: 150_000, bcpMitig: true, desc: "数日の休業。事前の判断基準と連絡体制が問われる。" },
+  { id: "blackout", type: "disaster", title: "長時間の停電", w: 3, occMult: 0.85, cost: 120_000, bcpMitig: true, desc: "電源確保ができるか。備蓄と代替手段が試される。" },
+  { id: "cluster", type: "disaster", title: "施設内クラスター発生", w: 3, occMult: 0.65, cost: 250_000, satShock: -10, bcpMitig: true, desc: "休業と信頼低下。ゾーニングと事前訓練が被害を分ける。" },
+];
+
+// 災害・一部の試練は BCP対策度で被害が軽減される
+function applyMitigation(card, state) {
+  const c = { ...card };
+  if (card.bcpMitig) {
+    const m = state.bcp / 100;
+    if (c.occMult != null) c.occMult = 1 - (1 - c.occMult) * (1 - 0.6 * m); // 稼働ダメージ最大60%減
+    if (c.cost) c.cost = Math.round(c.cost * (1 - 0.5 * m));                 // 復旧コスト最大50%減
+    if (c.satShock) c.satShock = Math.round(c.satShock * (1 - 0.5 * m));
+    c.mitigated = m > 0.4;
+  }
+  if (card.compMitig) {
+    const m = state.comp / 100;
+    if (c.satShock) c.satShock = Math.round(c.satShock * (1 - 0.5 * m));
+    c.mitigated = m > 0.6;
+  }
+  return c;
+}
+
+function drawCard(state, month, totalMonths) {
+  // 第1月は判断に集中させるためカードなし
+  if (month === 1) return null;
+  if (Math.random() > CONFIG.base.drawRate) return null;
+  const calMonth = ((month + 2) % 12) + 1; // 第1月を4月として季節を割り当てる
+  const pool = CARDS.filter((c) => {
+    if (c.season && !c.season.includes(calMonth)) return false;
+    if (c.reqSat && state.sat < c.reqSat) return false;
+    if (c.reqSatBelow && state.sat >= c.reqSatBelow) return false;
+    if (c.reqRet && state.ret < c.reqRet) return false;
+    return true;
+  });
+  if (!pool.length) return null;
+  const total = pool.reduce((s, c) => s + c.w, 0);
+  let r = Math.random() * total;
+  for (const c of pool) { r -= c.w; if (r <= 0) return applyMitigation(c, state); }
+  return applyMitigation(pool[pool.length - 1], state);
+}
+
+const CAP = CONFIG.base.teiin * CONFIG.base.operatingDays; // 定員回数/月
+
+/* ========================= 要介護度別の利用者構成 =========================
+   デイの単価は要介護度で大きく変わる。重度者ほど単価は高いが、手間もかかり、
+   職員1人が回せる人数は減る。一方で来所頻度は高く、休みにくい。
+   → 「頭数を集めて稼働率を上げる」か「重度を受けて単価を上げる」かで
+      必要な職員数も戦略も変わる。これが経営の分かれ道になる。
+========================================================================= */
+const LEVELS = [
+  { key: "yousien", label: "要支援", num: 0.5, price: 6_300,  load: 0.70, days: 9,  attend: 0.70 },
+  { key: "k1", label: "要介護1", num: 1, price: 8_500,  load: 1.00, days: 11, attend: 0.74 },
+  { key: "k2", label: "要介護2", num: 2, price: 9_800,  load: 1.20, days: 12, attend: 0.78 },
+  { key: "k3", label: "要介護3", num: 3, price: 11_300, load: 1.45, days: 13, attend: 0.82 },
+  { key: "k4", label: "要介護4", num: 4, price: 12_800, load: 1.70, days: 14, attend: 0.85 },
+  { key: "k5", label: "要介護5", num: 5, price: 14_300, load: 2.00, days: 14, attend: 0.88 },
+];
+
+/* 表示用に整数化する。内部は小数で保持しているが、画面では整数で見せる。
+   単純な四捨五入だと「内訳の合計」と「総数」が食い違い、検算した人の信用を失う。
+   最大剰余法（Largest Remainder Method）で、合計が必ず一致するよう配分する。 */
+function displayMix(mix) {
+  const total = LEVELS.reduce((a, L) => a + (mix?.[L.key] || 0), 0);
+  const target = Math.round(total);
+  const floors = LEVELS.map((L) => {
+    const v = mix?.[L.key] || 0;
+    return { key: L.key, floor: Math.floor(v), rem: v - Math.floor(v) };
+  });
+  let assigned = floors.reduce((a, f) => a + f.floor, 0);
+  // 端数の大きい順に、目標人数に届くまで1名ずつ足す
+  const order = [...floors].sort((a, b) => b.rem - a.rem);
+  let i = 0;
+  while (assigned < target && i < order.length * 3) {
+    order[i % order.length].floor += 1;
+    assigned += 1;
+    i += 1;
+  }
+  // 万一超えたら、端数の小さい順に削る
+  const rev = [...floors].sort((a, b) => a.rem - b.rem);
+  let j = 0;
+  while (assigned > target && j < rev.length * 3) {
+    if (rev[j % rev.length].floor > 0) { rev[j % rev.length].floor -= 1; assigned -= 1; }
+    j += 1;
+  }
+  const out = { total: target };
+  floors.forEach((f) => { out[f.key] = f.floor; });
+  return out;
+}
+
+// 利用者構成から、平均単価・平均要介護度・手間・来所需要を計算する
+function analyzeMix(mix) {
+  const total = LEVELS.reduce((a, L) => a + (mix[L.key] || 0), 0);
+  if (!total) return { total: 0, avgPrice: 0, avgLevel: 0, avgLoad: 1, demand: 0 };
+  let sp = 0, sl = 0, sn = 0, demand = 0;
+  for (const L of LEVELS) {
+    const n = mix[L.key] || 0;
+    sp += L.price * n; sl += L.load * n; sn += L.num * n;
+    demand += n * L.days * L.attend; // 各層の月間来所需要
+  }
+  return {
+    total,
+    avgPrice: sp / total,
+    avgLoad: sl / total,
+    avgLevel: sn / total,
+    demand,
+  };
+}
+
+// 受入方針（新規をどの層から取るか）で、利用者構成が少しずつ変わっていく
+const INTAKE_TARGET = {
+  light:  { yousien: 0.15, k1: 0.30, k2: 0.30, k3: 0.15, k4: 0.08, k5: 0.02 }, // 軽度中心
+  mixed:  { yousien: 0.08, k1: 0.22, k2: 0.28, k3: 0.22, k4: 0.13, k5: 0.07 }, // バランス
+  heavy:  { yousien: 0.00, k1: 0.10, k2: 0.18, k3: 0.30, k4: 0.26, k5: 0.16 }, // 重度対応
+};
+
+/* ======================= 管理者の工数（このゲームの背骨） =======================
+   デイサービスは管理者が兼務で全部やる。ケアも、請求も、記録も、営業も、家族対応も。
+   「利用者にサービスを提供していれば良い」が成立しないことを、時間の奪い合いで示す。
+   ・現場穴埋めは削れない（利用者が来ている以上、穴は埋めるしかない）＝最優先で消費
+   ・足りない分は、事務／営業／職員ケア／家族対応 のどれかを削るしかない
+   ・削った代償は、数ヶ月後に返戻・利用者減・離職・苦情として返ってくる
+   ・定着の高い職員には事務を任せられる（＝人への投資が「時間」として報われる）
+     逆に定着が低いと「人はいるのに任せられない」＝管理者が抱え込む
+============================================================================= */
+const TASKS = {
+  care:   { key: "care",   label: "現場の穴埋め", fixed: true,  desc: "職員が足りない分、管理者が現場に入る。削れない。" },
+  admin:  { key: "admin",  label: "請求・記録・加算事務", desc: "削ると適正運営度が下がり、加算の算定に支障が出る。" },
+  sales:  { key: "sales",  label: "営業・ケアマネ回り", desc: "削ると紹介が細り、利用者が減っていく。" },
+  people: { key: "people", label: "職員面談・シフト調整", desc: "削ると定着度が下がる。人は静かに離れていく。" },
+  family: { key: "family", label: "家族対応・苦情処理", desc: "削ると満足度が下がる。苦情が放置される。" },
+};
+
+// 各業務に「本来必要な時間」を算出する
+function requiredHours(state, decision, reqStaff) {
+  const shortage = Math.max(0, reqStaff - state.staff);
+  // 管理者は常に現場を一定時間持つ（兼務）。職員が足りなければ、その穴埋めが上乗せされる
+  const care = CONFIG.base.managerBaseCare + shortage * 35 + (decision.intake === "high" ? 12 : 0);
+
+  const userCount = LEVELS.reduce((a, L) => a + (state.mix?.[L.key] || 0), 0);
+  let admin = 36 + (decision.kasan === "standard" ? 15 : decision.kasan === "active" ? 28 : 0) + Math.round(userCount * 0.35);
+  // 基準を超える余剰職員に、定着度に応じて事務を分担できる
+  const surplus = Math.max(0, state.staff - reqStaff);
+  const delegable = Math.round(surplus * 10 * (state.ret / 100));
+  admin = Math.max(20, admin - delegable);
+
+  const sales = 28;
+  const people = Math.min(40, state.staff * 4) + (state.ret < 50 ? 18 : 0);
+  const family = 18 + (state.sat < 50 ? 18 : 0);
+
+  return { care, admin, sales, people, family, delegable };
+}
+
+// 削った時間に応じたペナルティ（充足率が低いほど痛い）
+function shortfallPenalty(task, ratio) {
+  const miss = clamp(1 - ratio, 0, 1); // 0=満たした, 1=まったくできなかった
+  switch (task) {
+    case "admin":  return { compT: -Math.round(miss * 30), billing: miss > 0.55 };
+    case "sales":  return { usersT: -Math.round(miss * 7) };
+    case "people": return { retT: -Math.round(miss * 26) };
+    case "family": return { satT: -Math.round(miss * 22) };
+    default: return {};
+  }
+}
+
+
+/* ------------------------------ ユーティリティ ------------------------------ */
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const conv = (cur, tgt, rate) => cur + (tgt - cur) * rate;
+const yen = (n) => "¥" + Math.round(n).toLocaleString("ja-JP");
+const signYen = (n) => (n >= 0 ? "+" : "−") + "¥" + Math.abs(Math.round(n)).toLocaleString("ja-JP");
+const abbrInit = (l) => ({ "営業強化": "営", "スポットレク": "レク", "職員研修": "研", "記録・書類の整備": "記録" }[l] || l);
+
+/* ------------------- 1ヶ月の試算（確定的・事故抽選は含めない） ------------------- */
+function project(state, decision, event) {
+  const B = CONFIG.base;
+  const c = CONFIG.care[decision.care], ik = CONFIG.intake[decision.intake];
+  const st = CONFIG.staffing[decision.staffing], ka = CONFIG.kasan[decision.kasan];
+  const ev = event || {};
+
+  // 施策
+  const cond = 0.5 + state.ret / 100;
+  const inits = decision.initiatives || [];
+  let initCost = 0, satTb = 0, retTb = 0, compTb = 0, occMultI = 1, salesUsers = 0;
+  if (inits.includes("sales")) { initCost += CONFIG.initiatives.sales.cost; salesUsers = CONFIG.initiatives.sales.users; }
+  if (inits.includes("spotrec")) { const i = CONFIG.initiatives.spotrec; initCost += i.cost; satTb += Math.round(i.satBoost * cond); occMultI *= 1 + i.occBoost * cond; }
+  if (inits.includes("training")) { const i = CONFIG.initiatives.training; initCost += i.cost; retTb += i.retBoost; satTb += i.satBoost; compTb += i.compBoost; occMultI *= i.occMult; }
+  if (inits.includes("records")) { const i = CONFIG.initiatives.records; initCost += i.cost; compTb += i.compBoost; }
+  let bcpBoost = 0;
+  if (inits.includes("bcp")) { const i = CONFIG.initiatives.bcp; initCost += i.cost; bcpBoost += i.bcpBoost; }
+
+  const staff = clamp(state.staff + st.dStaff, B.staffMin, B.staffMax);
+
+  // 人員配置基準：1日平均利用者に対する必要職員
+  const users0 = LEVELS.reduce((a, L) => a + (state.mix?.[L.key] || 0), 0);
+  const dailyUsers = users0 * (0.6 + state.sat / 100 * 0.3) * ik.factor;
+  const reqStaff = Math.max(3, Math.ceil(dailyUsers / 8));
+  const understaffed = staff < reqStaff;
+
+  // --- 管理者の工数 ---
+  const need = requiredHours({ ...state, staff }, decision, reqStaff);
+  const H = B.managerHours;
+  const careH = Math.min(need.care, H); // 現場穴埋めは削れない・最優先
+  const remaining = Math.max(0, H - careH);
+  const needRest = need.admin + need.sales + need.people + need.family;
+  const hoursGap = Math.max(0, needRest - remaining); // 足りない時間
+
+  // プレイヤーの配分（0-100の重み）。不足分はこの重みに応じて各業務へ割り当てる
+  const w = decision.hours || { admin: 25, sales: 25, people: 25, family: 25 };
+  const wSum = (w.admin + w.sales + w.people + w.family) || 1;
+  const alloc = {};
+  const ratios = {};
+  const penalties = {};
+  for (const k of ["admin", "sales", "people", "family"]) {
+    // 重みに応じて残時間を配る（ただし必要量を超えては配らない）
+    const share = remaining * (w[k] / wSum);
+    alloc[k] = Math.min(need[k], Math.round(share));
+    ratios[k] = need[k] > 0 ? alloc[k] / need[k] : 1;
+    penalties[k] = shortfallPenalty(k, ratios[k]);
+  }
+  // 余った時間を、まだ満たしていない業務に再配分（無駄を出さない）
+  let leftover = remaining - Object.values(alloc).reduce((a, b) => a + b, 0);
+  for (const k of ["admin", "sales", "people", "family"]) {
+    if (leftover <= 0) break;
+    const room = need[k] - alloc[k];
+    if (room > 0) { const add = Math.min(room, leftover); alloc[k] += add; leftover -= add; }
+  }
+  for (const k of ["admin", "sales", "people", "family"]) {
+    ratios[k] = need[k] > 0 ? alloc[k] / need[k] : 1;
+    penalties[k] = shortfallPenalty(k, ratios[k]);
+  }
+  const hoursPen = {
+    compT: penalties.admin.compT || 0,
+    usersT: penalties.sales.usersT || 0,
+    retT: penalties.people.retT || 0,
+    satT: penalties.family.satT || 0,
+    billing: penalties.admin.billing, // 請求ミス＝返戻
+  };
+
+
+  // 加算算定可否（体制＋人員基準）
+  const kasanElig = ka.uplift > 0 && staff >= ka.reqStaff && state.ret >= ka.reqRet && !understaffed;
+  const kasanFailed = ka.uplift > 0 && !kasanElig;
+  let uplift = kasanElig ? ka.uplift : 0, haircut = false;
+  if (kasanElig && state.comp < 50) { uplift = Math.round(ka.uplift * 0.5); haircut = true; }
+  // --- 利用者構成から単価・需要・手間を算出する ---
+  const mixInfo = analyzeMix(state.mix);
+  const avgLevel = mixInfo.avgLevel;
+  const avgLoad = mixInfo.avgLoad;
+
+  // 職員1人が回せる回数：要介護度の手間とケアの手厚さで決まる
+  const effThru = Math.max(20, Math.round((B.baseThroughput / avgLoad) * c.thruMult) - (kasanElig ? ka.thruPen : 0));
+
+  // 需要：構成ごとの来所頻度が土台。満足度が低いと足が遠のく
+  const satAdj = clamp(0.80 + (state.sat / 100) * 0.35, 0.6, 1.12);
+  const occMult = (ev.occMult ?? 1) * occMultI;
+  const demand = mixInfo.demand * satAdj * occMult;
+
+  const staffCap = staff * effThru;
+  const visits = Math.max(0, Math.floor(Math.min(demand, staffCap, CAP)));
+  const staffLimited = staffCap < Math.min(demand, CAP);
+  const demandLimited = demand < Math.min(staffCap, CAP);
+  const capLimited = CAP <= Math.min(demand, staffCap);
+  const bottleneck = staffLimited ? "職員" : capLimited ? "定員" : "需要";
+  const occRate = visits / CAP;
+
+  // 収入：平均単価は要介護度の構成で決まる
+  const basePrice = Math.round(mixInfo.avgPrice) - (state.priceDown || 0);
+  const unitPrice = basePrice + uplift;
+  let income = visits * unitPrice;
+  const kasanIncome = visits * uplift;
+  // 事務が回らないと請求ミス＝返戻が発生（収入から差し引かれる）
+  const billingLoss = hoursPen.billing ? Math.round(income * 0.04) : 0;
+  income -= billingLoss;
+  // 支出（カードによる固定費高騰・臨時コストを含む）
+  const fixed = B.fixedCost + (ev.fixedUp ?? 0);
+  const eventCost = ev.cost ?? 0;
+  const eventCash = ev.cash ?? 0; // 補助金などの臨時収入
+  const staffTotal = staff * (B.staffCost + (state.staffCostUp || 0)); // 最低賃金は恒久的に人件費を上げる
+  const variable = visits * c.varCost;
+  let auditCost = 0, clawback = 0, auditNote = null;
+  if (ev.audit) {
+    if (state.comp >= 60) { auditCost = 150_000; auditNote = "記録が整っており大過なし。通常対応で完了。"; }
+    else if (state.comp >= 40) { auditCost = 300_000; clawback = Math.round(kasanIncome * 0.5); auditNote = "記録に不備あり。加算の一部返還を求められた。"; }
+    else { auditCost = 300_000; clawback = kasanIncome; auditNote = "記録が著しく不備。加算の返還と改善指導を受けた。"; }
+  }
+  const expense = staffTotal + fixed + variable + initCost + auditCost + clawback + eventCost;
+  const pl = income + eventCash - expense;
+
+  // 過密ペナルティ（次月の水準に反映）
+  const crowd = occRate > 0.85 ? 1 : 0;
+
+  /* ---- 「なぜ数字が動いたか」の理由を集める（研修での気づきの核） ---- */
+  const reasons = { sat: [], ret: [], comp: [], users: [], staff: [] };
+  const add = (k, v, text) => { if (v) reasons[k].push({ v, text }); };
+
+  // 満足度の要因
+  add("sat", c.satT - 60, `ケアの手厚さ「${c.label}」`);
+  add("sat", ik.satT, `受入方針「${ik.label}」`);
+  add("sat", ka.satT, `加算「${ka.label}」による自立支援`);
+  add("sat", satTb, "追加施策（レク・研修）");
+  add("sat", (ev.satT ?? 0) + (ev.satShock ?? 0), ev.title ? `出来事「${ev.title}」` : "出来事");
+  add("sat", -crowd * 8, "定員ぎりぎりの過密運営で目が行き届かない");
+  add("sat", hoursPen.satT, "家族対応・苦情処理に手が回らなかった");
+
+  // 定着度の要因
+  add("ret", st.retT, `人員体制「${st.label}」`);
+  add("ret", ik.retT, `受入方針「${ik.label}」による現場の負担`);
+  add("ret", decision.care === "premium" ? -2 : 0, "手厚いケアによる現場の負担");
+  add("ret", retTb, "追加施策（研修など人への投資）");
+  add("ret", (ev.retT ?? 0) + (ev.retShock ?? 0), ev.title ? `出来事「${ev.title}」` : "出来事");
+  add("ret", -crowd * 5, "過密運営による疲弊");
+  add("ret", hoursPen.retT, "職員面談・シフト調整に手が回らなかった");
+
+  // 適正運営度の要因
+  add("comp", st.compT, `人員体制「${st.label}」`);
+  add("comp", ik.compT, `受入方針「${ik.label}」で記録が後回しに`);
+  add("comp", ka.compT, `加算「${ka.label}」の記録・事務負担`);
+  add("comp", compTb, "追加施策（記録の整備・研修）");
+  add("comp", ev.compT ?? 0, ev.title ? `出来事「${ev.title}」` : "出来事");
+  add("comp", understaffed ? -15 : 0, "人員配置基準を満たしておらず運営が崩れている");
+  add("comp", hoursPen.compT, "請求・記録の事務に手が回らなかった");
+
+  // 目標水準への収束（＝維持しないと自然に戻る）
+  const satTarget = clamp(c.satT + ik.satT + ka.satT + satTb + (ev.satT ?? 0) + (ev.satShock ?? 0) - crowd * 8 + hoursPen.satT, 0, 100);
+  const retTarget = clamp(55 + st.retT + ik.retT + (decision.care === "premium" ? -2 : 0) + retTb
+    + (ev.retT ?? 0) + (ev.retShock ?? 0) - crowd * 5 + hoursPen.retT, 0, 100);
+  const compTarget = clamp(60 + st.compT + ik.compT + ka.compT + compTb + (ev.compT ?? 0)
+    + (understaffed ? -15 : 0) + hoursPen.compT, 0, 100);
+
+  let sat = Math.round(conv(state.sat, satTarget, 0.4));
+  let ret = Math.round(conv(state.ret, retTarget, 0.4));
+  let comp = Math.round(conv(state.comp, compTarget, 0.35));
+  // --- 利用者数の増減（構成に反映される） ---
+  const usersNow = mixInfo.total;
+  const usersTarget = clamp(38 + (sat - 55) * 0.6 + hoursPen.usersT, B.usersMin, B.usersMax);
+  let users = Math.round(conv(usersNow, usersTarget, 0.25) + salesUsers + (ev.users ?? 0));
+  users = clamp(users, B.usersMin, B.usersMax);
+  let curStaff = staff + (ev.dStaff ?? 0);
+
+  add("users", salesUsers, "営業強化で新規を掘り起こした");
+  add("users", ev.users ?? 0, ev.title ? `出来事「${ev.title}」` : "出来事");
+  add("users", hoursPen.usersT, "営業・ケアマネ回りに手が回らず紹介が細った");
+  if (sat >= 65) add("users", 1, "満足度が高く、口コミで利用者が集まっている");
+  else if (sat <= 48) add("users", -1, "満足度が低く、利用者が離れつつある");
+  add("staff", st.dStaff, `人員体制「${st.label}」`);
+  add("staff", ev.dStaff ?? 0, ev.title ? `出来事「${ev.title}」` : "出来事");
+
+  // 受入方針に沿って、利用者構成が少しずつ寄っていく（新規をどの層から取るかが構成を変える）
+  // ※ 構成は小数のまま保持する。整数に丸めると小さな変化が消えてしまうため。
+  const tgt = INTAKE_TARGET[CONFIG.admission[decision.admission].target];
+  const rounded = {};
+  for (const L of LEVELS) {
+    const cur = (state.mix?.[L.key] || 0) / Math.max(1, usersNow); // 現在の構成比
+    const want = tgt[L.key] || 0;
+    const ratio = cur + (want - cur) * B.mixShift; // 目標構成へゆっくり寄せる
+    rounded[L.key] = Math.max(0, ratio * users);
+  }
+  // 合計を users にぴったり合わせる（小数のまま）
+  const sumMix = LEVELS.reduce((a, L) => a + rounded[L.key], 0);
+  if (sumMix > 0) for (const L of LEVELS) rounded[L.key] = rounded[L.key] / sumMix * users;
+
+  const bcp = clamp(state.bcp + bcpBoost - B.bcpDecay, 0, 100);
+  sat = clamp(sat, 0, 100); ret = clamp(ret, 0, 100); comp = clamp(comp, 0, 100); users = clamp(users, B.usersMin, B.usersMax);
+
+  let churn = false;
+  if (ret < B.retBomb) {
+    curStaff -= 1; churn = true;
+    add("staff", -1, "定着度が限界を割り、職員が離職した");
+  }
+  curStaff = clamp(curStaff, B.staffMin, B.staffMax);
+
+  // 事故リスク
+  let risk = 6;
+  if (state.ret < 45) risk += 16; else if (state.ret < 55) risk += 7;
+  if (staffLimited) risk += 8;
+  if (understaffed) risk += 12;
+  if (decision.intake === "high") risk += 6;
+  if (state.comp >= 70) risk -= 8;
+  if (occRate > 0.85) risk += 8;
+  risk = clamp(risk, 2, 75);
+
+  return {
+    breakdown: { visits, income, basePrice, unitPrice, uplift, kasanIncome, staffTotal, fixed, variable,
+      initCost, auditCost, clawback, eventCost, eventCash, fixedUp: ev.fixedUp ?? 0, expense, pl,
+      staffLimited, understaffed, reqStaff, occRate, kasanFailed, haircut,
+      billingLoss, staffCostUp: ev.staffCostUp ?? 0, priceDown: ev.priceDown ?? 0,
+      avgLevel, avgLoad, effThru, demand: Math.round(demand), staffCap, bottleneck, userCount: usersNow,
+      hours: { need, alloc, careH, remaining, hoursGap, ratios, delegable: need.delegable, total: H } },
+    preAfter: { users, sat, ret, comp, bcp, staff: curStaff, mix: rounded },
+    churn, riskPct: risk, auditNote, event, reasons,
+    initiatives: inits.map((k) => CONFIG.initiatives[k].label),
+    decisionLabels: { care: c.label, intake: ik.label, staffing: st.label, kasan: ka.label,
+      admission: CONFIG.admission[decision.admission].label,
+      policy: state.policy ? POLICIES[state.policy].label : "—" },
+  };
+}
+
+/* --------------------- 1ヶ月を確定（事故抽選＋現金の入出金） --------------------- */
+function resolveMonth(state, decision, event) {
+  const p = project(state, decision, event);
+  const usersBefore = LEVELS.reduce((a, L) => a + (state.mix?.[L.key] || 0), 0);
+  const before = { users: Math.round(usersBefore), sat: Math.round(state.sat), ret: Math.round(state.ret),
+    comp: Math.round(state.comp), bcp: Math.round(state.bcp), staff: state.staff, funds: state.funds };
+  const bd = { ...p.breakdown };
+  let { users, sat, ret, comp, bcp, staff, mix } = p.preAfter;
+
+  // 事故抽選
+  let accident = false;
+  if (Math.random() * 100 < p.riskPct) {
+    accident = true;
+    const acc = CONFIG.base.accident;
+    sat = clamp(sat - acc.dSat, 0, 100);
+    const before2 = users;
+    users = clamp(users - acc.dUsers, CONFIG.base.usersMin, CONFIG.base.usersMax);
+    // 減った分を構成からも比例して差し引く
+    if (before2 > 0 && users < before2) {
+      const r = users / before2;
+      let acc2 = 0;
+      LEVELS.forEach((L, i) => {
+        if (i === LEVELS.length - 1) mix[L.key] = Math.max(0, users - acc2);
+        else { mix[L.key] = Math.max(0, Math.round((mix[L.key] || 0) * r)); acc2 += mix[L.key]; }
+      });
+    }
+    comp = clamp(comp - acc.dComp, 0, 100);
+    bd.expense += acc.cost; bd.pl -= acc.cost; bd.accidentCost = acc.cost;
+  }
+
+  // 現金：介護報酬は約2ヶ月遅れで入金
+  const pipe = state.pipeline;
+  const cashIn = pipe[0] + (bd.eventCash || 0);
+  const newPipe = [pipe[1], bd.income];
+  const cashOut = bd.expense;
+  const cashAfter = state.funds + cashIn - cashOut;
+  const receivables = pipe[1] + bd.income;
+  bd.cashIn = cashIn; bd.cashOut = cashOut; bd.cashAfter = cashAfter; bd.receivables = receivables;
+
+  const after = { users, sat, ret, comp, bcp, staff, mix, funds: cashAfter };
+  if (accident) {
+    p.reasons.sat.push({ v: -CONFIG.base.accident.dSat, text: "転倒事故が起き、信頼が損なわれた" });
+    p.reasons.users.push({ v: -CONFIG.base.accident.dUsers, text: "事故を受けて利用を控える家族が出た" });
+  }
+  return {
+    breakdown: bd, before, after, churn: p.churn, accident, riskPct: p.riskPct, auditNote: p.auditNote,
+    event, initiatives: p.initiatives, decisionLabels: p.decisionLabels, reasons: p.reasons,
+    newState: { ...state, month: state.month + 1, ...after, pipeline: newPipe,
+      staffCostUp: (state.staffCostUp || 0) + (bd.staffCostUp || 0),   // 最低賃金は以後ずっと効く
+      priceDown: (state.priceDown || 0) + (bd.priceDown || 0) },        // 報酬改定も以後ずっと効く
+  };
+}
+
+/* =========================================================================
+   課題の仕分け（このツールの核心）
+   ---------------------------------------------------------------------------
+   12ヶ月のプレイ履歴と最終状態から、自事業所の課題候補を洗い出し、
+   「自分で改善できること」と「第三者の伴走が要ること」に仕分ける。
+
+   設計原則：
+   ・自走できる部分は先に手放す。具体的なアクションまで書き切る。
+   ・押し売りにしない。だからこそ「伴走が要る」に説得力が出る。
+   ・伴走領域は SWMD のサービス領域（人材育成／加算算定／BCP）に対応する。
+========================================================================= */
+function diagnoseIssues(log, finalState) {
+  const self = [];   // 自分で改善できること
+  const support = []; // 第三者の伴走を検討したほうがよいこと
+  if (!log.length) return { self, support };
+
+  const n = log.length;
+  const last = log[n - 1];
+  const f = finalState;
+
+  // ---- 集計 ----
+  const avgOcc = log.reduce((a, r) => a + r.breakdown.occRate, 0) / n;
+  const bnCount = { 職員: 0, 定員: 0, 需要: 0 };
+  log.forEach((r) => { bnCount[r.breakdown.bottleneck] = (bnCount[r.breakdown.bottleneck] || 0) + 1; });
+  const mainBn = Object.entries(bnCount).sort((a, b) => b[1] - a[1])[0][0];
+
+  const churnCount = log.filter((r) => r.churn).length;
+  const kasanFailMonths = log.filter((r) => r.breakdown.kasanFailed).length;
+  const kasanTried = log.filter((r) => r.decisionLabels.kasan !== "取り組まない").length;
+  const clawbackMonths = log.filter((r) => r.breakdown.clawback > 0).length;
+  const billingMonths = log.filter((r) => r.breakdown.billingLoss > 0).length;
+  const accidentCount = log.filter((r) => r.accident).length;
+  const disasterHits = log.filter((r) => r.event?.type === "disaster");
+  const disasterLoss = disasterHits.reduce((a, r) => a + (r.breakdown.eventCost || 0), 0);
+  const understaffMonths = log.filter((r) => r.breakdown.understaffed).length;
+  const cashShortMonths = log.filter((r) => r.breakdown.cashAfter < 0).length;
+  const totalPl = log.reduce((a, r) => a + r.breakdown.pl, 0);
+  // 記録・事務の弱点を自走側（請求ミス／記録整備）が既に挙げているか。
+  // 伴走側で同じ弱点を二重に指摘しない（＝食い違いを起こさない）ための判定。
+  const selfFlaggedRecords = billingMonths > 0 || f.comp < 50;
+
+  /* ================= 自分で改善できること ================= */
+
+  // 稼働率・ボトルネック
+  if (mainBn === "需要" && avgOcc < 0.70) {
+    self.push({
+      title: "稼働率が上がっていない（利用者が足りない）",
+      fact: `12ヶ月の平均稼働率は${Math.round(avgOcc * 100)}%。職員には余力があるのに、来所の需要が足りていません。`,
+      action: "職員を増やしても収入は増えません。まず「頭数を集める（営業・ケアマネ回り）」のか、「単価を上げる（重度者を受け入れる）」のか、方針を決めてください。自事業所のボトルネックがどちらかを見極めることが先決です。",
+    });
+  }
+  if (mainBn === "職員" && avgOcc < 0.75) {
+    self.push({
+      title: "利用者は来たいのに、受けきれていない",
+      fact: `${bnCount["職員"]}ヶ月にわたり、職員数が上限となって来所を受けきれませんでした。`,
+      action: "需要はあるのに機会損失が出ています。増員が直接収入につながる局面です。自事業所でも「断っている利用者」がいないか、確認してみてください。",
+    });
+  }
+  if (mainBn === "定員") {
+    self.push({
+      title: "定員がいっぱいで、これ以上受けられない",
+      fact: "定員が上限となり、頭数ではもう伸ばせない状態でした。",
+      action: "この局面では「単価を上げる」しか道がありません。要介護度の高い方の受け入れや、加算の算定を検討することになります。",
+    });
+  }
+
+  // 記録・事務
+  if (billingMonths > 0) {
+    self.push({
+      title: "事務が回らず、請求ミスが起きた",
+      fact: `${billingMonths}ヶ月で請求ミスによる返戻が発生しました。`,
+      action: "記録・請求は「後回しにできる仕事」に見えて、実は収入に直結します。誰がいつ書くのかを業務に組み込めているか、確認してください。",
+    });
+  } else if (f.comp < 50) {
+    self.push({
+      title: "記録・書類の整備が追いついていない",
+      fact: `適正運営度が${Math.round(f.comp)}まで低下しました。`,
+      action: "実地指導が入れば指摘は避けられない水準です。記録の運用ルールを整えるところから着手できます。",
+    });
+  }
+
+  // 人員配置基準
+  if (understaffMonths > 0) {
+    self.push({
+      title: "人員配置基準を満たせていない月があった",
+      fact: `${understaffMonths}ヶ月にわたり、利用者数に対して職員が不足していました。`,
+      action: "基準を割ると加算が算定できないだけでなく、運営そのものが問われます。利用者数と必要職員数の関係を、常に把握できる状態にしてください。",
+    });
+  }
+
+  // 資金繰り
+  if (cashShortMonths > 0) {
+    self.push({
+      title: "手元の現金が尽きた月があった",
+      fact: `${cashShortMonths}ヶ月で現金がマイナスになりました。${totalPl >= 0 ? "通期では黒字だったにもかかわらず、です。" : ""}`,
+      action: "介護報酬は約2ヶ月遅れで入金されます。「黒字なのに現金が無い」は珍しくありません。数ヶ月先の入出金を見通せているか、確認してください。",
+    });
+  }
+
+  /* ============ 第三者の伴走を検討したほうがよいこと ============ */
+
+  // 人材育成・定着
+  if (churnCount >= 2 || f.ret < 48) {
+    const detail = churnCount > 0
+      ? `12ヶ月で${churnCount}名が離職しました。`
+      : `定着度が${Math.round(f.ret)}まで低下しました。人が抜け始める水準です。`;
+    support.push({
+      area: "人材育成・定着",
+      title: "職員が続かない",
+      fact: detail + "職員が抜けると現場が薄くなり、管理者が穴埋めに入り、記録や営業が止まる——この連鎖が起きます。",
+      why: "採用で埋め続けるのは限界があります。なぜ人が辞めるのか、どうすれば続くのか。当事者だけで原因を特定するのは難しく、外部の視点が要る領域です。",
+    });
+  }
+
+  // 加算算定
+  if (kasanTried > 0 && kasanFailMonths >= 4) {
+    support.push({
+      area: "加算算定の体制構築",
+      title: "加算を取ろうとしたが、要件を満たせなかった",
+      fact: `${kasanFailMonths}ヶ月にわたり、体制要件（職員数・定着度）を満たせず加算を算定できませんでした。`,
+      why: "加算は「取ると決める」だけでは取れません。人員・記録・体制が揃って初めて算定できます。どの加算なら自事業所で取れるのか、何を整えれば届くのか。この設計は専門的な検討が要ります。",
+    });
+  } else if (kasanTried === 0) {
+    support.push({
+      area: "加算算定の体制構築",
+      title: "加算にまったく取り組まなかった",
+      fact: "12ヶ月を通じて、加算の算定に取り組みませんでした。",
+      why: "加算は単価を押し上げる、最も確実な収益改善策です。良いケアを収益として回収する仕組みでもあります。取れるはずの加算を取りこぼしていないか、一度棚卸しする価値があります。",
+    });
+  } else if (clawbackMonths > 0 && f.comp < 55 && !selfFlaggedRecords) {
+    // 単発の返還は運の要素もある。記録の水準自体が低い場合に限って課題とし、
+    // かつ自走側で既に記録・事務を指摘しているときは二重に言わない（棲み分け：自走＝記録運用／伴走＝加算体制）
+    support.push({
+      area: "加算算定の体制構築",
+      title: "実地指導で加算の返還を求められた",
+      fact: `記録の不備により、算定済みの加算を返還することになりました。適正運営度も${Math.round(f.comp)}にとどまっています。`,
+      why: "加算は「取る」だけでなく「維持する」ことが難しい。記録が要件を満たしているか、第三者の目で点検する仕組みが要ります。",
+    });
+  }
+
+  // BCP：被災するかどうかは運。被害の有無ではなく「備えの水準（BCP対策度）」だけで判定する。
+  // → 同じ戦略なら、災害を引いても引かなくても伴走提案の有無は変わらない。
+  //   被災した場合は事実として費用に触れるが、それは提案を出す/出さないの判定には使わない。
+  if (f.bcp < 22) {
+    const hit = disasterHits.length > 0;
+    support.push({
+      area: "BCP策定・訓練",
+      title: hit ? "災害に備えがないまま被災した" : "災害への備えがほとんどない",
+      fact: hit
+        ? `BCP対策度が${Math.round(f.bcp)}のまま、${disasterHits.length}回の災害に見舞われ、対応費用として約${yen(disasterLoss)}を要しました。被災するかどうかは運ですが、被害の大きさは平時の備えで変わります。`
+        : `BCP対策度が${Math.round(f.bcp)}のまま12ヶ月が過ぎました。今回はたまたま大きな災害が来ませんでしたが、次も来ないとは限りません。`,
+      why: "BCPは「作って終わり」の書類ではありません。感染症も地震も水害も、起きてから考えるのでは間に合わない。備えは平時にしかできず、何をどこまで備えるかの優先順位づけには外部の視点が有効です。",
+    });
+  }
+
+  // 事故：偶発性があるため、体制の問題（定着が低い or 人員不足）を伴う場合のみ課題とする。
+  // 体制が整っているのに事故が出た回は「運」であり、それを課題として売り込まない。
+  if (accidentCount >= 3 && (f.ret < 55 || understaffMonths > 0)) {
+    support.push({
+      area: "人材育成・定着",
+      title: "事故が繰り返し起きた",
+      fact: `12ヶ月で${accidentCount}件の事故が発生しました。個々の事故には偶然の要素もありますが、この頻度の背景には手薄・疲弊した現場があります。`,
+      why: "事故は「不注意」ではなく、余裕のない現場から生まれます。人員体制と職員の余裕を立て直さない限り、繰り返します。",
+    });
+  }
+
+  // 重要度の高いものに絞る。全部並べると「売り込み」に見え、かえって信用を失う。
+  // 自分で改善：最大3件 ／ 伴走：最大2件
+  const selfTop = self.slice(0, 3);
+  const supportTop = support.slice(0, 2);
+  const omitted = (self.length - selfTop.length) + (support.length - supportTop.length);
+
+  return {
+    self: selfTop, support: supportTop, omitted,
+    stats: { avgOcc, mainBn, churnCount, kasanFailMonths, totalPl },
+  };
+}
+
+/* ===================== 画面描画層 ===================== */
+/* =========================================================================
+   レンダリング層（バニラJS・外部依存ゼロ）
+   ロジック層（CONFIG / POLICIES / CARDS / project / resolveMonth …）を使う
+   ========================================================================= */
+
+const CONTACT_URL = "https://forms.gle/gGYEvDksogVmY4o39";
+
+const App = {
+  phase: "start",
+  mode: "staff",      // "staff"=一般職・現場リーダー層 / "exec"=経営層
+  totalMonths: 6,
+  state: null,
+  decision: null,
+  lastResult: null,
+  log: [],
+};
+
+// 一般職モードは工数配分を操作しない（自動でバランス配分される）
+const AUTO_HOURS = { admin: 30, sales: 25, people: 25, family: 20 };
+const isExec = () => App.mode === "exec";
+
+const freshDecision = () => ({
+  intake: "mid", admission: "mixed", care: "standard", staffing: "keep", kasan: "none",
+  initiatives: [], choiceIdx: 0,
+  hours: isExec() ? { admin: 25, sales: 25, people: 25, family: 25 } : { ...AUTO_HOURS },
+});
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const $ = (sel) => document.querySelector(sel);
+const root = () => document.getElementById("root");
+
+/* ------------------------------ 状態の更新 ------------------------------ */
+function startGame(mode) {
+  const B = CONFIG.base;
+  App.mode = mode;
+  const months = 12; // 両コースとも12ターン。差は判断項目の多さで付ける
+  App.totalMonths = months;
+  const s0 = {
+    month: 1, funds: B.initFunds, mix: { ...B.initMix }, sat: B.initSat, staff: B.initStaff,
+    users: LEVELS.reduce((a, L) => a + (B.initMix[L.key] || 0), 0),
+    ret: B.initRet, comp: B.initComp, bcp: B.initBcp,
+    pipeline: [B.receivableSeed, B.receivableSeed],
+    staffCostUp: 0, priceDown: 0, policy: null,
+  };
+  s0.card = drawCard(s0, 1, months);
+  App.state = s0;
+  App.decision = freshDecision();
+  App.log = [];
+  App.lastResult = null;
+  App.phase = "decide";
+  render();
+}
+
+function applyPolicy(key) {
+  const p = POLICIES[key];
+  if (!p) return;
+  App.state.policy = key;
+  const hours = isExec() ? { ...p.set.hours } : { ...AUTO_HOURS };
+  App.decision = { ...App.decision, ...p.set, hours };
+  render();
+}
+
+function setLever(group, value) { App.decision[group] = value; render(); }
+function setHours(key, value) { App.decision.hours[key] = Number(value); render(); }
+function setChoice(i) { App.decision.choiceIdx = i; render(); }
+function toggleInit(k) {
+  const list = App.decision.initiatives;
+  App.decision.initiatives = list.includes(k) ? list.filter((x) => x !== k) : [...list, k];
+  render();
+}
+
+function currentEvent() {
+  const raw = App.state?.card;
+  if (!raw) return null;
+  if (raw.type !== "choice") return raw;
+  // 選択肢数はカードごとに違うため、範囲外にならないよう丸める
+  const i = clamp(App.decision.choiceIdx ?? 0, 0, raw.choices.length - 1);
+  const pick = raw.choices[i];
+  return { ...raw, ...pick, chosenLabel: pick.label };
+}
+
+function runMonth() {
+  const r = resolveMonth(App.state, App.decision, currentEvent());
+  App.lastResult = r;
+  App.log.push(r);
+  App.phase = "result";
+  window.scrollTo(0, 0);
+  render();
+}
+
+function nextMonth() {
+  const ns = App.lastResult.newState;
+  if (ns.month > App.totalMonths) { App.phase = "end"; window.scrollTo(0, 0); render(); return; }
+  ns.card = drawCard(ns, ns.month, App.totalMonths);
+  App.state = ns;
+  App.decision = freshDecision();
+  if (ns.policy) {
+    const p = POLICIES[ns.policy];
+    const hours = isExec() ? { ...p.set.hours } : { ...AUTO_HOURS };
+    App.decision = { ...App.decision, ...p.set, hours };
+  }
+  App.phase = "decide";
+  window.scrollTo(0, 0);
+  render();
+}
+
+function restart() { App.phase = "start"; window.scrollTo(0, 0); render(); }
+
+/* ------------------------------ 画面の描画 ------------------------------ */
+function render() {
+  const el = root();
+  if (App.phase === "start") el.innerHTML = viewStart();
+  else if (App.phase === "decide") el.innerHTML = viewDecide();
+  else if (App.phase === "result") el.innerHTML = viewResult();
+  else if (App.phase === "end") el.innerHTML = viewEnd();
+  else if (App.phase === "report") el.innerHTML = viewReport();
+  bind();
+}
+
+function bind() {
+  document.querySelectorAll("[data-act]").forEach((n) => {
+    n.onclick = () => {
+      const a = n.dataset.act, v = n.dataset.val;
+      if (a === "start") startGame(v);
+      else if (a === "policy") applyPolicy(v);
+      else if (a === "lever") setLever(n.dataset.group, v);
+      else if (a === "init") toggleInit(v);
+      else if (a === "choice") setChoice(Number(v));
+      else if (a === "run") runMonth();
+      else if (a === "next") nextMonth();
+      else if (a === "restart") restart();
+      else if (a === "report") { App.phase = "report"; window.scrollTo(0, 0); render(); }
+    };
+  });
+  document.querySelectorAll("[data-hours]").forEach((n) => {
+    n.oninput = () => setHours(n.dataset.hours, n.value);
+  });
+}
+
+/* ------------------------------- スタート ------------------------------- */
+function viewStart() {
+  return `<div class="frame"><div class="start">
+    <div class="eyebrow">研修用 経営シミュレーション</div>
+    <h1 class="title">通所介護の<br><span class="title-accent">経営判断</span>を体験する</h1>
+    <p class="lead">
+      あなたは小規模デイサービスの管理者。毎月の方針を決め、その結果として黒字にも赤字にもなります。
+      良いケアを提供していさえすれば経営が回る——とは限りません。
+      利用者の満足、職員の定着、記録の整備、災害への備え。そのどれが欠けても、数ヶ月後に返ってきます。
+    </p>
+    <div class="mode-head">何を学びたいかで選んでください</div>
+    <div class="mode-cards">
+      <button class="mode-card primary" data-act="start" data-val="staff">
+        <div class="mode-tag">標準（一般職員・現場リーダー向け）</div>
+        <div class="mode-len">経営の基本を学ぶ</div>
+        <div class="mode-desc">
+          自分たちのサービス提供が、どう収支に跳ね返るのか。<br>
+          稼働・単価・人員・加算——<b>経営を動かす4つのレバー</b>を握り、
+          利用者の満足と職員の定着を保ちながら、黒字を目指します。
+          <span class="mode-meta">12ヶ月／25分程度</span>
+        </div>
+      </button>
+      <button class="mode-card" data-act="start" data-val="exec">
+        <div class="mode-tag">詳細（管理者向け）</div>
+        <div class="mode-len">経営の課題分析を行う</div>
+        <div class="mode-desc">
+          基本コースの判断に加え、<b>限られた時間をどう割り振るか</b>まで背負います。<br>
+          現場・請求・営業・職員面談・家族対応——<b>業務を棚卸しし、優先順位をつける</b>。
+          何を諦めたかが、数ヶ月後に返ってきます。
+          <span class="mode-meta">12ヶ月／40分程度</span>
+        </div>
+      </button>
+    </div>
+    <div class="fineprint">※ 数値は学習用に簡略化した架空モデルです。実際の介護報酬とは異なります。</div>
+  </div></div>`;
+}
+
+/* ------------------------------- 判断画面 ------------------------------- */
+function meter(label, value, max, color, suffix = "") {
+  const pct = clamp((value / max) * 100, 0, 100);
+  return `<div class="meter">
+    <div class="meter-top"><span class="meter-label">${label}</span><span class="meter-val">${Math.round(value)}${suffix}</span></div>
+    <div class="meter-track"><div class="meter-fill" style="width:${pct}%;background:${color}"></div></div>
+  </div>`;
+}
+
+function segmented(groupLabel, group, options, cfg, current) {
+  return `<div class="lever">
+    <div class="lever-head">${groupLabel}</div>
+    <div class="seg">${options.map((k) =>
+      `<button class="seg-btn${current === k ? " active" : ""}" data-act="lever" data-group="${group}" data-val="${k}">${cfg[k].label}</button>`
+    ).join("")}</div>
+    <div class="lever-hint">${esc(cfg[current].hint)}</div>
+  </div>`;
+}
+
+function viewDecide() {
+  const s = App.state, d = App.decision, B = CONFIG.base;
+  const ev = currentEvent(), raw = s.card;
+  const proj = project(s, d, ev);
+  const bd = proj.breakdown, h = bd.hours;
+
+  const warns = [];
+  if (bd.understaffed) warns.push(`人員配置基準を満たしていません（必要 約${bd.reqStaff}名）。加算は算定できず、適正運営度が下がります。`);
+  if (s.ret < 45) warns.push("職員の定着度が危険水域です。離職の連鎖が起きる前に手を打つ判断を。");
+  if (s.comp < 50) warns.push("適正運営度が低下しています。実地指導での返還や加算の減額につながります。");
+  if (bd.kasanFailed && !bd.understaffed) {
+    const ka = CONFIG.kasan[d.kasan], why = [];
+    if (s.staff < ka.reqStaff) why.push(`職員${ka.reqStaff}名以上（現在${s.staff}名）`);
+    if (s.ret < ka.reqRet) why.push(`定着度${ka.reqRet}以上（現在${Math.round(s.ret)}）`);
+    warns.push(`加算が算定できません。要件：${why.join("・")}。単価の上乗せがゼロになります。`);
+  }
+  if (s.funds < 500000) warns.push("手元現金が細っています。報酬は約2ヶ月遅れで入るため、単月の支出に注意。");
+  if (s.bcp < 30) warns.push("BCP対策度が低い状態です。災害が起きたときの被害が大きくなります。");
+
+  const occ = Math.round(bd.occRate * 100);
+  const risk = proj.riskPct;
+  const rl = risk < 25 ? "low" : risk < 45 ? "mid" : "high";
+  const rw = rl === "low" ? "低" : rl === "mid" ? "中" : "高";
+  const recv = s.pipeline[0] + s.pipeline[1];
+  const drift = policyDrift(s.policy, d);
+
+  return `<div class="frame">
+    <div class="phead">
+      <div>
+        <div class="phead-month">第 ${s.month} 月 <span class="phead-total">/ 全${App.totalMonths}月</span></div>
+        <div class="phead-progress">${Array.from({ length: App.totalMonths }).map((_, i) =>
+          `<span class="pip${i < s.month - 1 ? " done" : i === s.month - 1 ? " now" : ""}"></span>`).join("")}</div>
+      </div>
+      <div class="phead-right">
+        <div class="phead-funds-label">手元現金</div>
+        <div class="phead-funds${s.funds < 0 ? " neg" : ""}">${yen(s.funds)}</div>
+        <div class="phead-recv">未収金 ${yen(recv)}</div>
+        ${App.lastResult ? `<div class="phead-pl ${App.lastResult.breakdown.pl >= 0 ? "profit" : "loss"}">前月損益 ${signYen(App.lastResult.breakdown.pl)}</div>` : ""}
+      </div>
+    </div>
+
+    <div class="meters">
+      ${meter("満足度（ケアの質）", s.sat, 100, "var(--amber)")}
+      ${meter("定着度（働きやすさ）", s.ret, 100, "var(--teal)")}
+      ${meter("適正運営度（記録・遵守）", s.comp, 100, "var(--violet)")}
+      ${meter("BCP対策度（災害への備え）", s.bcp, 100, "var(--slate)")}
+      ${meter("登録利用者数", s.users, B.usersMax, "var(--green)", "名")}
+      <div class="meter">
+        <div class="meter-top"><span class="meter-label">職員数（常勤換算）</span><span class="meter-val">${s.staff}名</span></div>
+        <div class="staff-dots">${Array.from({ length: B.staffMax }).map((_, i) =>
+          `<span class="dot${i < s.staff ? " on" : ""}"></span>`).join("")}</div>
+      </div>
+    </div>
+
+    ${(s.staffCostUp > 0 || s.priceDown > 0) ? `<div class="perma">
+      ${s.staffCostUp > 0 ? `<span class="perma-chip">人件費 +${yen(s.staffCostUp)}/人（最低賃金の引き上げ）</span>` : ""}
+      ${s.priceDown > 0 ? `<span class="perma-chip">単価 −${yen(s.priceDown)}（報酬改定）</span>` : ""}
+    </div>` : ""}
+
+    ${raw ? `<div class="event ev-${raw.type}">
+      <div class="event-tag">${raw.type === "good" ? "好機" : raw.type === "disaster" ? "災害" : raw.type === "choice" ? "判断を迫られる出来事" : "試練"}</div>
+      <div class="event-title">${esc(raw.title)}</div>
+      <div class="event-desc">${esc(raw.desc)}</div>
+      ${ev?.mitigated ? `<div class="event-mitig">✔ 日頃の備えが効いています。被害が軽減されました。</div>` : ""}
+      ${raw.type === "disaster" && !ev?.mitigated && s.bcp < 40 ? `<div class="event-nomitig">⚠ 備えが不十分。被害をまともに受けます。</div>` : ""}
+      ${raw.type === "choice" ? `<div class="choices">${raw.choices.map((c, i) =>
+        `<button class="choice${d.choiceIdx === i ? " on" : ""}" data-act="choice" data-val="${i}">
+          <div class="choice-label">${d.choiceIdx === i ? "✓ " : ""}${esc(c.label)}</div>
+          <div class="choice-sub">${esc(c.sub)}${c.cost ? `（−${yen(c.cost)}）` : ""}</div>
+        </button>`).join("")}</div>` : ""}
+    </div>` : ""}
+
+    ${warns.length ? `<div class="warns">${warns.map((w) => `<div class="warn">⚠ ${esc(w)}</div>`).join("")}</div>` : ""}
+
+    <div class="policy">
+      <div class="policy-head">経営方針を選ぶ<small>選ぶと下のレバーが一括で設定されます。そこから調整もできます。</small></div>
+      <div class="policy-grid">${Object.values(POLICIES).map((p) =>
+        `<button class="pol${s.policy === p.key ? " on" : ""}" data-act="policy" data-val="${p.key}">${s.policy === p.key ? "✓ " : ""}${p.label}</button>`).join("")}</div>
+      ${s.policy ? `<div class="policy-detail">
+        <div class="pd-desc">${esc(POLICIES[s.policy].desc)}</div>
+        <div class="pd-trade">⚖ ${esc(POLICIES[s.policy].tradeoff)}</div>
+      </div>` : ""}
+      ${drift.length ? `<div class="policy-drift"><b>掲げた方針から外れています</b>
+        ${drift.map((x) => `<div class="pd-item">・${esc(x)}</div>`).join("")}</div>` : ""}
+    </div>
+
+    ${(() => {
+      const mi = analyzeMix(s.mix);
+      const dm = displayMix(s.mix); // 内訳の合計と総数が必ず一致する表示用の値
+      const bn = bd.bottleneck;
+      return `<div class="mixpanel">
+        <div class="mix-head">
+          <span>利用者の構成（要介護度別）</span>
+          <span class="mix-sum">${dm.total}名／平均要介護度 <b>${mi.avgLevel.toFixed(2)}</b></span>
+        </div>
+        <div class="mix-bars">
+          ${LEVELS.map((L) => {
+            const n = dm[L.key] || 0;
+            const pct = dm.total > 0 ? (n / dm.total) * 100 : 0;
+            return `<div class="mx" title="${L.label} ${n}名">
+              <div class="mx-bar"><div class="mx-fill lv-${L.key}" style="height:${Math.min(100, pct * 2.6)}%"></div></div>
+              <div class="mx-n">${n}</div>
+              <div class="mx-l">${L.label.replace("要介護", "").replace("要支援", "支援")}</div>
+              <div class="mx-p">${yen(L.price)}</div>
+            </div>`;
+          }).join("")}
+        </div>
+        <div class="mix-calc">
+          <div class="mc"><span class="mc-l">平均単価</span><span class="mc-v">${yen(Math.round(mi.avgPrice))}</span></div>
+          <div class="mc"><span class="mc-l">職員1人が回せる回数</span><span class="mc-v">${bd.effThru}回</span></div>
+          <div class="mc"><span class="mc-l">来所の需要</span><span class="mc-v">${bd.demand}回</span></div>
+          <div class="mc"><span class="mc-l">職員の処理上限</span><span class="mc-v">${Math.round(bd.staffCap)}回</span></div>
+        </div>
+        <div class="mix-bn bn-${bn === "職員" ? "staff" : bn === "定員" ? "cap" : "demand"}">
+          いま収入を抑えているのは <b>${bn}</b> です。
+          ${bn === "職員" ? "利用者は来たいのに、職員が足りず受けきれていません。増員すれば収入が伸びます。"
+            : bn === "定員" ? "定員いっぱいです。これ以上は受けられません。単価を上げる（重度を受ける）しかありません。"
+            : "職員には余力がありますが、来所の需要が足りません。増員しても収入は増えず、人件費だけが増えます。"}
+        </div>
+      </div>`;
+    })()}
+
+    <div class="levers">
+      ${segmented("① 受入方針（稼働率をどこまで追うか）", "intake", ["low", "mid", "high"], CONFIG.intake, d.intake)}
+      ${segmented("② 受入層（どの要介護度を受けるか＝単価を決める）", "admission", ["light", "mixed", "heavy"], CONFIG.admission, d.admission)}
+      ${segmented("③ ケアの手厚さ（満足度と手間に効く）", "care", ["basic", "standard", "premium"], CONFIG.care, d.care)}
+      ${segmented("④ 人員体制（＝人件費）", "staffing", ["cut", "keep", "hire"], CONFIG.staffing, d.staffing)}
+      ${segmented("⑤ 加算・機能訓練体制（＝単価の上乗せ）", "kasan", ["none", "standard", "active"], CONFIG.kasan, d.kasan)}
+    </div>
+
+    <div class="initiatives">
+      <div class="init-head">⑥ 追加施策（任意・複数選択可）</div>
+      <div class="init-grid">${Object.values(CONFIG.initiatives).map((it) => {
+        const on = d.initiatives.includes(it.key);
+        return `<button class="init-chip${on ? " on" : ""}" data-act="init" data-val="${it.key}">
+          <div class="init-chip-top"><span class="init-name">${on ? "✓ " : ""}${it.label}</span><span class="init-cost">−${yen(it.cost)}</span></div>
+          <div class="init-desc">${esc(it.hint)}</div>
+        </button>`;
+      }).join("")}</div>
+      <div class="init-total">今月の施策費：<b>${yen(d.initiatives.reduce((a, k) => a + CONFIG.initiatives[k].cost, 0))}</b></div>
+    </div>
+
+    ${(() => {
+      const f = cashForecast(s, bd.income, bd.expense);
+      const names = ["今月末", "来月末", "再来月末"];
+      return `<div class="cashflow${f.risky ? " risky" : ""}">
+        <div class="cf-head">資金繰りの見通し
+          <small>介護報酬は約2ヶ月遅れで入ります。今の投資は「今」出ていき、その成果は2ヶ月後に入ります。</small></div>
+        <div class="cf-track">
+          ${f.balance.map((b, i) => {
+            const lv = b < 0 ? "ng" : b < 500000 ? "warn" : "ok";
+            return `<div class="cf-col ${lv}">
+              <div class="cf-when">${names[i]}</div>
+              <div class="cf-bal">${yen(b)}</div>
+              <div class="cf-in">入金 ${yen(f.incoming[i])}</div>
+            </div>`;
+          }).join("")}
+        </div>
+        ${f.risky ? `<div class="cf-warn">この見通しでは手元現金が心細くなります。先行投資は、入金が追いつくまで耐えられるかで判断してください。</div>`
+          : `<div class="cf-ok">当面の資金繰りに余裕があります。今は先行投資を打てる局面です。</div>`}
+        <div class="cf-recv">現在の未収金（入金待ち）：<b>${yen(s.pipeline[0] + s.pipeline[1])}</b>　
+          <span class="cf-note">サービスは提供済みだが、まだ現金になっていない分</span></div>
+      </div>`;
+    })()}
+
+    ${isExec() ? `<div class="hours">
+      <div class="hours-head"><span>⑦ 管理者の時間の使い方</span><span class="hours-budget">月 ${h.total}h</span></div>
+      <div class="hours-care">
+        <div class="hc-row"><span class="hc-label">現場に入る時間（削れない）</span><span class="hc-val">${h.careH}h</span></div>
+        ${h.careH > CONFIG.base.managerBaseCare
+          ? `<div class="hc-note">職員が足りず、穴埋めで現場に入る時間が増えています。その分、経営の仕事が消えます。</div>`
+          : `<div class="hc-note ok">管理者は兼務で現場に入ります。ここは削れません。</div>`}
+        <div class="hc-remain">他の仕事に使える時間　<b>${h.remaining}h</b>${h.delegable > 0 ? `<span class="hc-deleg">／ 職員に事務を ${h.delegable}h 分担</span>` : ""}</div>
+      </div>
+      ${h.hoursGap > 0 ? `<div class="hours-warn">必要な時間の合計に <b>${h.hoursGap}h</b> 足りません。どれを優先し、どれを削るかを決めてください。</div>` : ""}
+      <div class="hsliders">${["admin", "sales", "people", "family"].map((k) => {
+        const need = h.need[k], got = h.alloc[k];
+        const ratio = need > 0 ? got / need : 1;
+        const lvl = ratio >= 0.98 ? "full" : ratio >= 0.65 ? "part" : "short";
+        return `<div class="hslider ${lvl}">
+          <div class="hs-top"><span class="hs-label">${TASKS[k].label}</span><span class="hs-num">${got}<small>/${need}h</small></span></div>
+          <input type="range" min="0" max="100" value="${d.hours[k]}" data-hours="${k}">
+          <div class="hs-bar"><div class="hs-fill" style="width:${Math.min(100, ratio * 100)}%"></div></div>
+          ${ratio < 0.98 ? `<div class="hs-pen">${esc(TASKS[k].desc)}</div>` : ""}
+        </div>`;
+      }).join("")}</div>
+    </div>` : ""}
+
+    <div class="preview">
+      <div class="pv-item">
+        <span class="pv-label">予測 稼働率</span>
+        <span class="pv-occ${occ > 85 ? " hot" : ""}">${occ}%</span>
+        <span class="pv-sub">定員 ${B.teiin}名 / 月${CAP}回</span>
+      </div>
+      <div class="pv-item risk-${rl}">
+        <span class="pv-label">事故リスク</span>
+        <span class="pv-risk">${rw}<small>（約${risk}%）</small></span>
+        <div class="risk-bar"><div class="risk-fill" style="width:${risk}%"></div></div>
+      </div>
+    </div>
+
+    <button class="cta" data-act="run">この方針で 第${s.month}月 を経営する →</button>
+  </div>`;
+}
+
+/* ------------------------------- 結果画面 ------------------------------- */
+const row = (k, v) => `<div class="row"><span>${k}</span><span class="row-v">${v}</span></div>`;
+
+function deltaRow(label, before, after, suffix = "") {
+  const b = Math.round(before), a = Math.round(after), dv = a - b;
+  const chip = dv === 0 ? `<span class="delta flat">±0</span>`
+    : `<span class="delta ${dv > 0 ? "up" : "down"}">${dv > 0 ? "▲" : "▼"}${Math.abs(dv)}${suffix}</span>`;
+  return `<div class="drow"><span class="drow-label">${label}</span>
+    <span class="drow-nums">${b}${suffix} → <b>${a}${suffix}</b></span>${chip}</div>`;
+}
+
+// メーターの増減と「なぜそうなったか」を並べて説明する
+function whyBlock(label, key, r, meaning, suffix = "") {
+  const before = Math.round(r.before[key]), after = Math.round(r.after[key]);
+  const dv = after - before;
+  const list = (r.reasons?.[key] || []).filter((x) => x.v);
+  // 意図的な要因の合計と、実際の変化のズレ＝「元の水準へ自然に戻る力」
+  const pushed = list.reduce((a, x) => a + x.v, 0);
+  const cls = dv > 0 ? "up" : dv < 0 ? "down" : "flat";
+  const arrow = dv === 0 ? "±0" : `${dv > 0 ? "▲" : "▼"}${Math.abs(dv)}${suffix}`;
+
+  return `<div class="why ${cls}">
+    <div class="why-head">
+      <span class="why-label">${label}<small>${meaning}</small></span>
+      <span class="why-nums">${before}${suffix} → <b>${after}${suffix}</b> <span class="delta ${cls}">${arrow}</span></span>
+    </div>
+    ${list.length ? `<div class="why-list">${list
+      .sort((a, b) => Math.abs(b.v) - Math.abs(a.v))
+      .map((x) => `<div class="why-item ${x.v > 0 ? "pos" : "neg"}">
+        <span class="why-v">${x.v > 0 ? "+" : ""}${x.v}</span>
+        <span class="why-t">${esc(x.text)}</span></div>`).join("")}</div>`
+      : `<div class="why-none">今月の判断では、この数字を動かす手を打っていません。</div>`}
+    ${(key === "sat" || key === "ret" || key === "comp") && Math.abs(pushed) < 2 && dv !== 0
+      ? `<div class="why-drift">※ 手を打たなければ、数字は元の水準へゆっくり戻ります。維持するには働きかけ続ける必要があります。</div>` : ""}
+  </div>`;
+}
+
+function viewResult() {
+  const r = App.lastResult, bd = r.breakdown, s = App.state;
+  const maxBar = Math.max(bd.income, bd.expense, 1);
+  const profit = bd.pl >= 0;
+  const cashDelta = bd.cashIn - bd.cashOut;
+
+  return `<div class="frame">
+    <div class="result-head">
+      <span class="result-month">第${s.month}月 の決算　稼働率 ${Math.round(bd.occRate * 100)}%</span>
+      <span class="result-verdict ${profit ? "profit" : "loss"}">${profit ? "黒字" : "赤字"} ${signYen(bd.pl)}</span>
+    </div>
+
+    <div class="tug">
+      <div class="tug-cap">発生ベースの損益（サービス提供の成果）</div>
+      <div class="tug-row"><span class="tug-label">収入</span>
+        <div class="tug-track"><div class="tug-fill income" style="width:${(bd.income / maxBar) * 100}%"></div></div>
+        <span class="tug-num">${yen(bd.income)}</span></div>
+      <div class="tug-row"><span class="tug-label">支出</span>
+        <div class="tug-track"><div class="tug-fill expense" style="width:${(bd.expense / maxBar) * 100}%"></div></div>
+        <span class="tug-num">${yen(bd.expense)}</span></div>
+    </div>
+
+    <div class="bd-grid">
+      <div class="bd-col">
+        <div class="bd-col-title income-t">収入の内訳</div>
+        ${row("延べ利用回数", `${bd.visits} 回`)}
+        ${row("平均単価（要介護度 " + bd.avgLevel.toFixed(2) + "）", `× ${yen(bd.basePrice)}`)}
+        ${bd.uplift > 0 ? row("加算単価", `+ ${yen(bd.uplift)}`) : ""}
+        ${bd.billingLoss > 0 ? row("請求ミスによる返戻", `− ${yen(bd.billingLoss)}`) : ""}
+        ${bd.eventCash > 0 ? row("臨時収入（補助金等）", yen(bd.eventCash)) : ""}
+        ${bd.kasanFailed ? `<div class="bd-note">※ 加算の体制・人員要件を満たさず算定できませんでした。</div>` : ""}
+        ${bd.haircut ? `<div class="bd-note">※ 適正運営度が低く加算が減額されました。</div>` : ""}
+        ${bd.staffLimited ? `<div class="bd-note">※ 職員数が上限。回しきれず機会損失が出ています。</div>` : ""}
+      </div>
+      <div class="bd-col">
+        <div class="bd-col-title expense-t">支出の内訳</div>
+        ${row("人件費", yen(bd.staffTotal))}
+        ${row("固定費", yen(bd.fixed))}
+        ${bd.fixedUp > 0 ? `<div class="bd-note">※ 光熱費・食材費の高騰で固定費が増えています。</div>` : ""}
+        ${row("変動費", yen(bd.variable))}
+        ${bd.initCost > 0 ? row("施策費", yen(bd.initCost)) : ""}
+        ${bd.auditCost > 0 ? row("実地指導対応", yen(bd.auditCost)) : ""}
+        ${bd.clawback > 0 ? row("加算返還", yen(bd.clawback)) : ""}
+        ${bd.accidentCost > 0 ? row("事故対応", yen(bd.accidentCost)) : ""}
+        ${bd.eventCost > 0 ? row("災害・臨時対応", yen(bd.eventCost)) : ""}
+      </div>
+    </div>
+
+    <div class="cash">
+      <div class="cash-title">現金の動き　<small>介護報酬は約2ヶ月遅れで入金</small></div>
+      ${row("今月の入金（2ヶ月前サービス分）", yen(bd.cashIn))}
+      ${row("今月の支出（現金払い）", `− ${yen(bd.cashOut)}`)}
+      <div class="cash-net"><span>現金増減</span><span class="${cashDelta >= 0 ? "profit" : "loss"}">${signYen(cashDelta)}</span></div>
+      <div class="cash-bal"><span>手元現金</span><span>${yen(bd.cashAfter)}</span></div>
+      ${row("未収金（入金待ち）", yen(bd.receivables))}
+      ${profit && cashDelta < 0 ? `<div class="cash-note">黒字でも現金は減少。報酬の入金待ちの間、支出は先に出ていきます（資金繰りの実態）。</div>` : ""}
+      ${bd.cashAfter < 0 ? `<div class="cash-warn">手元現金がマイナス。発生損益が黒字でも、現金が尽きれば事業は続けられません（黒字倒産）。</div>` : ""}
+    </div>
+
+    <div class="hreport">
+      <div class="hreport-title">管理者の時間はどう使われたか</div>
+      <div class="hr-care">現場に <b>${bd.hours.careH}h</b>（うち穴埋め ${Math.max(0, bd.hours.careH - CONFIG.base.managerBaseCare)}h）。ここは削れません。</div>
+      <div class="hr-rows">${["admin", "sales", "people", "family"].map((k) => {
+        const need = bd.hours.need[k], got = bd.hours.alloc[k];
+        const ratio = need > 0 ? got / need : 1;
+        const lvl = ratio >= 0.98 ? "full" : ratio >= 0.65 ? "part" : "short";
+        const badge = ratio >= 0.98 ? "できた" : ratio >= 0.65 ? "一部" : "手が回らず";
+        return `<div class="hr-row ${lvl}"><span class="hr-label">${TASKS[k].label}</span>
+          <span class="hr-num">${got}/${need}h</span><span class="hr-badge">${badge}</span></div>`;
+      }).join("")}</div>
+      ${bd.billingLoss > 0 ? `<div class="hr-alert">事務が回らず請求ミスが発生。${yen(bd.billingLoss)} が返戻されました。</div>` : ""}
+    </div>
+
+    ${r.initiatives.length ? `<div class="applied"><span class="applied-label">実施した施策</span>
+      ${r.initiatives.map((n) => `<span class="applied-chip">${esc(n)}</span>`).join("")}</div>` : ""}
+    ${r.event?.chosenLabel ? `<div class="chosennote">選んだ対応：<b>${esc(r.event.chosenLabel)}</b></div>` : ""}
+    ${r.auditNote ? `<div class="auditnote">🔎 実地指導：${esc(r.auditNote)}</div>` : ""}
+    ${r.accident ? `<div class="accident">💥 転倒事故が発生しました。手薄・疲弊した現場ではリスクが現実になります。満足度と信頼が大きく低下。</div>` : ""}
+
+    <div class="delta-panel">
+      <div class="delta-panel-title">サービス提供の結果、来月に向けて<small>なぜ動いたのか、理由を確かめてください</small></div>
+      ${whyBlock("満足度", "sat", r, "利用者がこのデイをどう感じているか")}
+      ${whyBlock("定着度", "ret", r, "職員がここで働き続けたいと思えているか")}
+      ${whyBlock("適正運営度", "comp", r, "記録・書類が整い、基準を守れているか")}
+      ${whyBlock("利用者数", "users", r, "登録している利用者の人数", "名")}
+      ${whyBlock("職員数", "staff", r, "常勤換算の職員数", "名")}
+      ${deltaRow("BCP対策度", r.before.bcp, r.after.bcp)}
+      ${r.churn ? `<div class="churn">💥 定着度の低下で職員が1名離職しました。負担がさらに残る職員に集中します。</div>` : ""}
+    </div>
+
+    <button class="cta" data-act="next">${r.newState.month > App.totalMonths ? "通期の決算を見る →" : `第${r.newState.month}月へ進む →`}</button>
+  </div>`;
+}
+
+/* ------------------------------- 終了画面 ------------------------------- */
+function viewEnd() {
+  const totalPl = App.log.reduce((a, r) => a + r.breakdown.pl, 0);
+  const last = App.log[App.log.length - 1];
+  const finalCash = last.newState.funds;
+  const everNeg = App.log.some((r) => r.breakdown.cashAfter < 0);
+  const final = last.after;
+
+  // 期間の長さでスケールを変える（6ヶ月と12ヶ月で同じ閾値は不公平）
+  const k = App.totalMonths / 12;
+  let tier, cls;
+  if (everNeg) { tier = "資金ショート"; cls = "t-bad"; }
+  else if (totalPl > 3000000 * k) { tier = "優良経営"; cls = "t-great"; }
+  else if (totalPl >= 0) { tier = "黒字達成"; cls = "t-good"; }
+  else if (totalPl > -3000000 * k) { tier = "赤字・要改善"; cls = "t-warn"; }
+  else { tier = "経営危機"; cls = "t-bad"; }
+
+  // 黒字でも組織が壊れていれば、その事実を突きつける
+  const issues = diagnoseHealth(final);
+  const rotting = totalPl >= 0 && issues.some((i) => i.level === "bad");
+
+  return `<div class="frame"><div class="end">
+    <div class="eyebrow">${App.mode === "exec" ? "詳細コース｜経営の課題分析" : "標準コース｜経営の基本"}　${App.totalMonths}ヶ月の通期決算</div>
+    <div class="end-tier ${cls}">${tier}</div>
+    <div class="end-figures">
+      <div class="end-fig"><div class="end-fig-label">通期損益（発生ベース）</div>
+        <div class="end-fig-val ${totalPl >= 0 ? "profit" : "loss"}">${signYen(totalPl)}</div></div>
+      <div class="end-fig"><div class="end-fig-label">期末の手元現金</div>
+        <div class="end-fig-val${finalCash < 0 ? " loss" : ""}">${yen(finalCash)}</div></div>
+    </div>
+    ${everNeg ? `<div class="end-cashwarn">期中に手元現金がマイナスになった月がありました。黒字でも資金繰りが破綻すれば事業は続きません。</div>` : ""}
+
+    <div class="health">
+      <div class="health-title">${App.totalMonths}ヶ月を終えた、組織の状態</div>
+      <div class="health-meters">
+        ${[["満足度", final.sat], ["定着度", final.ret], ["適正運営度", final.comp], ["BCP対策度", final.bcp]].map(([n, v]) => {
+          const lv = v >= 60 ? "ok" : v >= 45 ? "mid" : "ng";
+          return `<div class="hm ${lv}"><span class="hm-n">${n}</span><span class="hm-v">${Math.round(v)}</span></div>`;
+        }).join("")}
+        <div class="hm ${final.staff >= 6 ? "ok" : final.staff >= 4 ? "mid" : "ng"}">
+          <span class="hm-n">職員数</span><span class="hm-v">${final.staff}名</span></div>
+      </div>
+      ${rotting ? `<div class="rot">数字の上では黒字です。しかし組織は壊れています。この状態のまま続ければ、
+        黒字はそう長く続きません。<b>サービスを提供して収益を上げることと、事業を続けられる状態を保つことは、別のことです。</b></div>` : ""}
+      ${issues.length ? `<div class="health-issues">
+        <div class="hi-head">この先に待っていること</div>
+        ${issues.map((i) => `<div class="hi ${i.level}">${i.level === "bad" ? "●" : "○"} ${esc(i.text)}</div>`).join("")}
+      </div>` : `<div class="health-good">✔ 大きな問題は見当たりません。利用者にも職員にも向き合えた${App.totalMonths}ヶ月でした。</div>`}
+    </div>
+
+    <div class="journey">
+      <div class="journey-title">判断のふりかえり</div>
+      <div class="jscroll"><table class="journey-table">
+        <thead><tr><th>月</th><th>方針</th><th>出来事</th><th>受入</th><th>受入層</th><th>ケア</th><th>人員</th><th>加算</th><th>稼働</th><th>損益</th><th>現金</th></tr></thead>
+        <tbody>${App.log.map((r, i) => `<tr>
+          <td>${i + 1}</td>
+          <td class="j-pol">${esc(r.decisionLabels.policy)}</td>
+          <td class="j-ev j-${r.event?.type || "none"}">${r.event ? esc(r.event.title) : "—"}</td>
+          <td>${r.decisionLabels.intake}</td>
+          <td class="j-adm">${r.decisionLabels.admission}</td>
+          <td>${r.decisionLabels.care}</td>
+          <td>${r.decisionLabels.staffing}</td>
+          <td class="j-kasan">${r.decisionLabels.kasan === "取り組まない" ? "—" : r.decisionLabels.kasan}</td>
+          <td>${Math.round(r.breakdown.occRate * 100)}%</td>
+          <td class="${r.breakdown.pl >= 0 ? "profit" : "loss"}">${signYen(r.breakdown.pl)}</td>
+          <td class="${r.breakdown.cashAfter < 0 ? "loss" : ""}">${yen(r.breakdown.cashAfter)}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>
+    </div>
+    <button class="cta" data-act="report">この結果から、自事業所の課題を整理する →</button>
+    <button class="cta ghost" data-act="restart">別の方針でもう一度プレイする</button>
+  </div></div>`;
+}
+
+/* ------------------------- 課題レポート（このツールの出口） ------------------------- */
+function viewReport() {
+  const last = App.log[App.log.length - 1];
+  const final = last.after;
+  const { self, support, omitted } = diagnoseIssues(App.log, final);
+  const totalPl = App.log.reduce((a, r) => a + r.breakdown.pl, 0);
+
+  return `<div class="frame"><div class="report">
+    <div class="eyebrow">経営課題の整理</div>
+    <h1 class="rep-title">この12ヶ月から見えた、<br><span class="title-accent">あなたの事業所の課題</span></h1>
+    <p class="rep-lead">
+      シミュレーションはあくまで架空のモデルであり、災害や事故には運の要素も含まれます。
+      それでも、ここで起きたことの多くは、実際のデイサービスでも起きています。
+      <b>「自分の事業所だったらどうか」という目で読んでみてください。</b>
+    </p>
+
+    ${self.length ? `<div class="rep-sec self">
+      <div class="rs-head">
+        <span class="rs-tag">ご自身で改善できること</span>
+        <span class="rs-note">外部の力を借りなくても、明日から着手できる領域です</span>
+      </div>
+      ${self.map((i) => `<div class="issue">
+        <div class="issue-title">${esc(i.title)}</div>
+        <div class="issue-fact">${esc(i.fact)}</div>
+        <div class="issue-action"><b>どうするか</b>${esc(i.action)}</div>
+      </div>`).join("")}
+    </div>` : ""}
+
+    ${support.length ? `<div class="rep-sec support">
+      <div class="rs-head">
+        <span class="rs-tag">第三者の伴走を検討したほうがよいこと</span>
+        <span class="rs-note">当事者だけで原因を特定し、解決するのが難しい領域です</span>
+      </div>
+      ${support.map((i) => `<div class="issue sup">
+        <div class="issue-area">${esc(i.area)}</div>
+        <div class="issue-title">${esc(i.title)}</div>
+        <div class="issue-fact">${esc(i.fact)}</div>
+        <div class="issue-why">${esc(i.why)}</div>
+      </div>`).join("")}
+    </div>`
+    : self.length ? `<div class="rep-clean">
+      外部の伴走が必要な段階ではありません。上に挙げた点は、いずれもご自身で着手できる範囲です。<br>
+      ここを整えられれば、経営はさらに安定します。条件を変えれば結果も変わります。別の方針でも試してみてください。
+    </div>`
+    : `<div class="rep-clean">
+      大きな課題は見当たりませんでした。利用者にも職員にも向き合えた12ヶ月です。<br>
+      ただし、条件を変えれば結果は変わります。別の経営方針でも試してみてください。
+    </div>`}
+
+    ${support.length ? `<div class="cta-box">
+      <div class="cb-title">課題の整理を、一緒にやりませんか</div>
+      <div class="cb-body">
+        株式会社福祉マネジメント＆デザインは、高齢者福祉・社会福祉法人の経営を支援しています。
+        <b>人材育成・定着支援</b>、<b>加算算定の体制構築</b>、<b>BCP策定と実践的な訓練</b>——
+        シミュレーションで浮かんだ課題は、実際の現場でもよく相談をいただく領域です。<br><br>
+        まずは話を聞いてみたい、という段階でも構いません。
+      </div>
+      <a class="cb-btn" href="${CONTACT_URL}" target="_blank" rel="noopener">相談・お問い合わせはこちら</a>
+      <div class="cb-note">※ 営業目的の一方的な連絡はいたしません</div>
+    </div>` : ""}
+
+    ${omitted > 0 ? `<div class="rep-omit">※ このほかにも ${omitted} 件の課題が見つかりましたが、
+      特に影響の大きいものに絞って表示しています。</div>` : ""}
+
+    <div class="rep-replay">
+      <div class="rr-title">もう一度、別の方針で試してみませんか</div>
+      <div class="rr-body">
+        ${totalPl >= 0
+          ? "今回は黒字でした。では、受入層を変えたら？　人員を絞ったら？　同じ結果にはなりません。"
+          : "今回はうまくいきませんでした。どこで間違えたのか、方針を変えて確かめてみてください。"}
+        経営に唯一の正解はなく、<b>自事業所の状況によって正解が変わります。</b>それを確かめるのが、このツールの目的です。
+      </div>
+      <button class="cta" data-act="restart">別の方針でもう一度プレイする</button>
+    </div>
+  </div></div>`;
+}
+
+document.addEventListener("DOMContentLoaded", render);
+
+</script>
+</body>
+</html>
