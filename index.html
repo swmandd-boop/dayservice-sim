@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v3-2026-07-15">
+<meta name="version" content="v3.1-2026-07-15-reconcile">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -764,35 +764,6 @@ function displayMix(mix) {
   return out;
 }
 
-/* 「なぜ動いたか」の内訳を、実際にメーターが動いた分(dv)に按分する。
-   内訳は「収束・クランプ前の生の寄与」なので、そのまま並べると合計が実際の増減とズレる
-   （検算した人の信用を失う）。displayMix と同じ発想で、比例配分＋最大剰余法により
-   内訳の整数合計が必ず dv に一致するようにする。
-   - 生の寄与合計と dv が同符号なら、各寄与を dv へ比例縮小して按分
-   - 生の寄与が無い／符号が食い違う（＝収束やクランプが主因）なら、
-     dv 全体を driftText の1行に置き換える */
-function apportionReasons(list, dv, driftText) {
-  const target = Math.round(dv);
-  if (target === 0) return [];
-  const raw = list.reduce((a, x) => a + x.v, 0);
-  if (!list.length || raw === 0 || Math.sign(raw) !== Math.sign(target)) {
-    return [{ v: target, text: driftText }];
-  }
-  const f = target / raw;
-  const items = list.map((x) => {
-    const ex = x.v * f, fl = Math.floor(ex);
-    return { v: fl, rem: ex - fl, text: x.text };
-  });
-  let assigned = items.reduce((a, x) => a + x.v, 0);
-  // 端数の大きい順に、合計が target に届くまで1ずつ足す（合計＝dv を保証）
-  const order = [...items].sort((a, b) => b.rem - a.rem);
-  let i = 0;
-  while (assigned < target && i < order.length * 3) {
-    order[i % order.length].v += 1; assigned += 1; i += 1;
-  }
-  return items.filter((x) => x.v !== 0).map((x) => ({ v: x.v, text: x.text }));
-}
-
 // 利用者構成から、平均単価・平均要介護度・手間・来所需要を計算する
 function analyzeMix(mix) {
   const total = LEVELS.reduce((a, L) => a + (mix[L.key] || 0), 0);
@@ -1036,6 +1007,53 @@ function project(state, decision, event) {
   let sat = Math.round(conv(state.sat, satTarget, 0.4));
   let ret = Math.round(conv(state.ret, retTarget, 0.4));
   let comp = Math.round(conv(state.comp, compTarget, 0.35));
+
+  /* 内訳（reasons）を「実際に動いた分」に合わせる。
+     メーターは目標へ 40%（compは35%）だけ寄るので、内訳の生の寄与を
+     そのまま足すと表示の増減と一致しない（プロが検算すると気づく）。
+     そこで、各メーターの内訳を「実際の変化量」に比例配分し直し、
+     端数は最大剰余法で調整して、内訳の合計＝表示の増減 を保証する。 */
+  const reconcile = (key, before, after) => {
+    const list = reasons[key];
+    const actualDelta = Math.round(after) - Math.round(before);
+    if (!list.length) {
+      // 内訳が一つも無いのに数字が動いた＝収束（基準へ戻る力）による微変動
+      if (actualDelta !== 0) {
+        const drift = actualDelta > 0 ? "特に手を打たず、基準値へ自然に戻った" : "維持する手を打たず、基準値へ下がった";
+        reasons[key] = [{ v: actualDelta, text: drift }];
+      }
+      return;
+    }
+    const rawSum = list.reduce((a, r) => a + r.v, 0);
+    if (rawSum === 0) {
+      // 寄与の総和がゼロ。実変化があれば「基準へ自然に戻る力」で説明する
+      if (actualDelta === 0) { reasons[key] = []; }
+      else {
+        const drift = actualDelta > 0 ? "特に手を打たず、基準値へ自然に戻った" : "維持する手を打たず、基準値へ下がった";
+        reasons[key] = [{ v: actualDelta, text: drift }];
+      }
+      return;
+    }
+    // 実変化を、生の寄与の比率で各項目に配分（小数）
+    const scaled = list.map((r) => ({ text: r.text, exact: actualDelta * (r.v / rawSum) }));
+    // 整数化：まず切り捨て、端数の大きい順に配って合計を actualDelta に一致させる
+    const floors = scaled.map((x) => ({ text: x.text, v: Math.trunc(x.exact), frac: x.exact - Math.trunc(x.exact), sign: Math.sign(x.exact) }));
+    let acc = floors.reduce((a, f) => a + f.v, 0);
+    let diff = actualDelta - acc; // 残りをどれだけ配るか（正負あり）
+    const order = [...floors].sort((a, b) => Math.abs(b.frac) - Math.abs(a.frac));
+    let i = 0;
+    while (diff !== 0 && i < order.length * 4) {
+      const step = diff > 0 ? 1 : -1;
+      order[i % order.length].v += step;
+      diff -= step;
+      i += 1;
+    }
+    // 0になった項目は表示から落とす（0の理由を並べても意味がない）
+    reasons[key] = floors.filter((f) => f.v !== 0).map((f) => ({ v: f.v, text: f.text }));
+  };
+  reconcile("sat", state.sat, sat);
+  reconcile("ret", state.ret, ret);
+  reconcile("comp", state.comp, comp);
   // --- 利用者数の増減（構成に反映される） ---
   const usersNow = mixInfo.total;
   const usersTarget = clamp(38 + (sat - 55) * 0.6 + hoursPen.usersT, B.usersMin, B.usersMax);
@@ -1048,6 +1066,7 @@ function project(state, decision, event) {
   add("users", hoursPen.usersT, "営業・ケアマネ回りに手が回らず紹介が細った");
   if (sat >= 65) add("users", 1, "満足度が高く、口コミで利用者が集まっている");
   else if (sat <= 48) add("users", -1, "満足度が低く、利用者が離れつつある");
+  reconcile("users", usersNow, users); // 利用者数の内訳も実変化に合わせる
   add("staff", st.dStaff, `人員体制「${st.label}」`);
   add("staff", ev.dStaff ?? 0, ev.title ? `出来事「${ev.title}」` : "出来事");
 
@@ -1074,6 +1093,7 @@ function project(state, decision, event) {
     add("staff", -1, "定着度が限界を割り、職員が離職した");
   }
   curStaff = clamp(curStaff, B.staffMin, B.staffMax);
+  reconcile("staff", state.staff, curStaff); // 職員数の内訳も実変化に合わせる（staffMin/Maxのクランプ込み）
 
   // 事故リスク
   let risk = 6;
@@ -1115,6 +1135,7 @@ function resolveMonth(state, decision, event) {
   if (Math.random() * 100 < p.riskPct) {
     accident = true;
     const acc = CONFIG.base.accident;
+    const satB = sat, compB = comp;
     sat = clamp(sat - acc.dSat, 0, 100);
     const before2 = users;
     users = clamp(users - acc.dUsers, CONFIG.base.usersMin, CONFIG.base.usersMax);
@@ -1129,6 +1150,7 @@ function resolveMonth(state, decision, event) {
     }
     comp = clamp(comp - acc.dComp, 0, 100);
     bd.expense += acc.cost; bd.pl -= acc.cost; bd.accidentCost = acc.cost;
+    p._accidentDelta = { sat: sat - satB, users: users - before2, comp: comp - compB };
   }
 
   // 現金：介護報酬は約2ヶ月遅れで入金
@@ -1141,9 +1163,11 @@ function resolveMonth(state, decision, event) {
   bd.cashIn = cashIn; bd.cashOut = cashOut; bd.cashAfter = cashAfter; bd.receivables = receivables;
 
   const after = { users, sat, ret, comp, bcp, staff, mix, funds: cashAfter };
-  if (accident) {
-    p.reasons.sat.push({ v: -CONFIG.base.accident.dSat, text: "転倒事故が起き、信頼が損なわれた" });
-    p.reasons.users.push({ v: -CONFIG.base.accident.dUsers, text: "事故を受けて利用を控える家族が出た" });
+  if (accident && p._accidentDelta) {
+    const ad = p._accidentDelta;
+    if (ad.sat) p.reasons.sat.push({ v: ad.sat, text: "転倒事故が起き、信頼が損なわれた" });
+    if (ad.users) p.reasons.users.push({ v: ad.users, text: "事故を受けて利用を控える家族が出た" });
+    if (ad.comp) p.reasons.comp.push({ v: ad.comp, text: "事故対応に追われ、記録・事務が乱れた" });
   }
   return {
     breakdown: bd, before, after, churn: p.churn, accident, riskPct: p.riskPct, auditNote: p.auditNote,
@@ -1750,15 +1774,9 @@ function deltaRow(label, before, after, suffix = "") {
 function whyBlock(label, key, r, meaning, suffix = "") {
   const before = Math.round(r.before[key]), after = Math.round(r.after[key]);
   const dv = after - before;
-  const raw = (r.reasons?.[key] || []).filter((x) => x.v);
-  const rawSum = raw.reduce((a, x) => a + x.v, 0);
-  // 生の寄与を実際の増減(dv)へ按分し、内訳の合計＝表示の増減 を保証する
-  const driftText = key === "users"
-    ? "満足度の水準に応じた利用者数の自然な増減"
-    : "水準への収束（維持しないと自然に戻る）";
-  const list = apportionReasons(raw, dv, driftText);
-  // 収束・クランプで効果が一部吸収されたか（＝合成の収束行に置き換えたか）
-  const synthetic = dv !== 0 && (!raw.length || rawSum === 0 || Math.sign(rawSum) !== Math.sign(dv));
+  const list = (r.reasons?.[key] || []).filter((x) => x.v);
+  // 意図的な要因の合計と、実際の変化のズレ＝「元の水準へ自然に戻る力」
+  const pushed = list.reduce((a, x) => a + x.v, 0);
   const cls = dv > 0 ? "up" : dv < 0 ? "down" : "flat";
   const arrow = dv === 0 ? "±0" : `${dv > 0 ? "▲" : "▼"}${Math.abs(dv)}${suffix}`;
 
@@ -1773,7 +1791,7 @@ function whyBlock(label, key, r, meaning, suffix = "") {
         <span class="why-v">${x.v > 0 ? "+" : ""}${x.v}</span>
         <span class="why-t">${esc(x.text)}</span></div>`).join("")}</div>`
       : `<div class="why-none">今月の判断では、この数字を動かす手を打っていません。</div>`}
-    ${(key === "sat" || key === "ret" || key === "comp") && dv !== 0 && !synthetic && rawSum !== dv
+    ${(key === "sat" || key === "ret" || key === "comp") && Math.abs(pushed) < 2 && dv !== 0
       ? `<div class="why-drift">※ 手を打たなければ、数字は元の水準へゆっくり戻ります。維持するには働きかけ続ける必要があります。</div>` : ""}
   </div>`;
 }
