@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v3-2026-07-14">
+<meta name="version" content="v3-2026-07-15">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -762,6 +762,35 @@ function displayMix(mix) {
   const out = { total: target };
   floors.forEach((f) => { out[f.key] = f.floor; });
   return out;
+}
+
+/* 「なぜ動いたか」の内訳を、実際にメーターが動いた分(dv)に按分する。
+   内訳は「収束・クランプ前の生の寄与」なので、そのまま並べると合計が実際の増減とズレる
+   （検算した人の信用を失う）。displayMix と同じ発想で、比例配分＋最大剰余法により
+   内訳の整数合計が必ず dv に一致するようにする。
+   - 生の寄与合計と dv が同符号なら、各寄与を dv へ比例縮小して按分
+   - 生の寄与が無い／符号が食い違う（＝収束やクランプが主因）なら、
+     dv 全体を driftText の1行に置き換える */
+function apportionReasons(list, dv, driftText) {
+  const target = Math.round(dv);
+  if (target === 0) return [];
+  const raw = list.reduce((a, x) => a + x.v, 0);
+  if (!list.length || raw === 0 || Math.sign(raw) !== Math.sign(target)) {
+    return [{ v: target, text: driftText }];
+  }
+  const f = target / raw;
+  const items = list.map((x) => {
+    const ex = x.v * f, fl = Math.floor(ex);
+    return { v: fl, rem: ex - fl, text: x.text };
+  });
+  let assigned = items.reduce((a, x) => a + x.v, 0);
+  // 端数の大きい順に、合計が target に届くまで1ずつ足す（合計＝dv を保証）
+  const order = [...items].sort((a, b) => b.rem - a.rem);
+  let i = 0;
+  while (assigned < target && i < order.length * 3) {
+    order[i % order.length].v += 1; assigned += 1; i += 1;
+  }
+  return items.filter((x) => x.v !== 0).map((x) => ({ v: x.v, text: x.text }));
 }
 
 // 利用者構成から、平均単価・平均要介護度・手間・来所需要を計算する
@@ -1721,9 +1750,15 @@ function deltaRow(label, before, after, suffix = "") {
 function whyBlock(label, key, r, meaning, suffix = "") {
   const before = Math.round(r.before[key]), after = Math.round(r.after[key]);
   const dv = after - before;
-  const list = (r.reasons?.[key] || []).filter((x) => x.v);
-  // 意図的な要因の合計と、実際の変化のズレ＝「元の水準へ自然に戻る力」
-  const pushed = list.reduce((a, x) => a + x.v, 0);
+  const raw = (r.reasons?.[key] || []).filter((x) => x.v);
+  const rawSum = raw.reduce((a, x) => a + x.v, 0);
+  // 生の寄与を実際の増減(dv)へ按分し、内訳の合計＝表示の増減 を保証する
+  const driftText = key === "users"
+    ? "満足度の水準に応じた利用者数の自然な増減"
+    : "水準への収束（維持しないと自然に戻る）";
+  const list = apportionReasons(raw, dv, driftText);
+  // 収束・クランプで効果が一部吸収されたか（＝合成の収束行に置き換えたか）
+  const synthetic = dv !== 0 && (!raw.length || rawSum === 0 || Math.sign(rawSum) !== Math.sign(dv));
   const cls = dv > 0 ? "up" : dv < 0 ? "down" : "flat";
   const arrow = dv === 0 ? "±0" : `${dv > 0 ? "▲" : "▼"}${Math.abs(dv)}${suffix}`;
 
@@ -1738,7 +1773,7 @@ function whyBlock(label, key, r, meaning, suffix = "") {
         <span class="why-v">${x.v > 0 ? "+" : ""}${x.v}</span>
         <span class="why-t">${esc(x.text)}</span></div>`).join("")}</div>`
       : `<div class="why-none">今月の判断では、この数字を動かす手を打っていません。</div>`}
-    ${(key === "sat" || key === "ret" || key === "comp") && Math.abs(pushed) < 2 && dv !== 0
+    ${(key === "sat" || key === "ret" || key === "comp") && dv !== 0 && !synthetic && rawSum !== dv
       ? `<div class="why-drift">※ 手を打たなければ、数字は元の水準へゆっくり戻ります。維持するには働きかけ続ける必要があります。</div>` : ""}
   </div>`;
 }
