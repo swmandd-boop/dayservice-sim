@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4-2026-07-15-advisor">
+<meta name="version" content="v4-2026-07-16-advisor">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -1404,19 +1404,25 @@ function advisorComment(month, s, bd, mix) {
   const cashEnd  = s.funds + (s.pipeline?.[0] || 0) - bd.expense;
   const cashEnd2 = cashEnd + (s.pipeline?.[1] || 0) - bd.expense;
   const cashRisk = Math.min(cashEnd, cashEnd2) < 500000;
+  const praise = () => ({ tone: "good", text: month >= App.totalMonths ? ADVISOR_LINES.final : ADVISOR_LINES.good });
 
-  // 最も深刻な1件だけ（説教くさくならないよう）。叩き台の優先順に評価。
-  if (cashRisk)               return { tone: "alert", text: ADVISOR_LINES.cash };
-  if (s.ret < 45)             return { tone: "alert", text: ADVISOR_LINES.ret };
-  if (bd.occRate < 0.6)       return { tone: "soft",  text: ADVISOR_LINES.occ };
-  if ((bd.uplift || 0) === 0) return { tone: "soft",  text: ADVISOR_LINES.kasan };
-  if (s.comp < 50)            return { tone: "alert", text: ADVISOR_LINES.comp };
-  if (s.bcp < 30)             return { tone: "soft",  text: ADVISOR_LINES.bcp };
+  // ① 深刻な問題は率直に諫言（承認より優先）。既存 warns のしきい値に整合。
+  if (cashRisk)    return { tone: "alert", text: ADVISOR_LINES.cash };
+  if (s.ret < 45)  return { tone: "alert", text: ADVISOR_LINES.ret };
+  if (s.comp < 45) return { tone: "alert", text: ADVISOR_LINES.comp };
+
+  // ② 大きな問題が無く全体が健全なら承認（新人を支える）——小さな伸びしろより優先。
+  //    これが無いと BCP 減衰等で褒めが永久に出ず「ダメ出し一辺倒」になる。
+  if (s.sat >= 60 && s.ret >= 55 && s.comp >= 55 && (bd.pl || 0) >= 0) return praise();
+
+  // ③ 伸びしろは温かく1つだけ（影響の大きい順）。
+  if (bd.occRate < 0.6)           return { tone: "soft", text: ADVISOR_LINES.occ };
+  if ((bd.uplift || 0) === 0)     return { tone: "soft", text: ADVISOR_LINES.kasan };
   if ((mix?.avgLevel || 0) > 2.8) return { tone: "soft", text: ADVISOR_LINES.heavy };
+  if (s.bcp < 20)                 return { tone: "soft", text: ADVISOR_LINES.bcp };
 
-  // 懸念なし：最終月は通期の振り返りへ、それ以外は承認（褒めで新人を支える）
-  if (month >= App.totalMonths) return { tone: "good", text: ADVISOR_LINES.final };
-  return { tone: "good", text: ADVISOR_LINES.good };
+  // ④ それ以外も承認。
+  return praise();
 }
 
 /* ===================== 画面描画層 ===================== */
