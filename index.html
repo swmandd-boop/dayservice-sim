@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.3-2026-07-16-cost">
+<meta name="version" content="v4.4-2026-07-17-minwage">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -654,8 +654,8 @@ const CARDS = [
     desc: "紹介元の居宅から「最近対応が雑になった」と指摘され、紹介が途絶えた。" },
   { id: "conflict", type: "bad", title: "職員間の対立が表面化", w: 7, retShock: -10, satShock: -4,
     desc: "ベテランと若手が衝突。現場の空気が悪く、ケアの質にも影を落とす。" },
-  { id: "wageup", type: "bad", title: "最低賃金の引き上げ", w: 6, staffCostUp: 12_000,
-    desc: "人件費の単価が上がる。以後、毎月の人件費が増加し続ける。" },
+  { id: "wageup", type: "bad", title: "最低賃金の引き上げ", w: 6, staffCostUp: 4_000,
+    desc: "最低賃金が引き上げられた。非正規職員の人件費が上がる（+4,000円/人・月）。以後ずっと続く。" },
   { id: "revision", type: "bad", title: "介護報酬改定（マイナス）", w: 3, priceDown: 400,
     desc: "基本報酬が引き下げられた。以後、単価が下がったまま経営することになる。" },
   { id: "famtrust", type: "good", title: "家族会で高評価", w: 5, reqSat: 70, users: 4, satT: 2, occMult: 1.04,
@@ -1704,7 +1704,7 @@ function viewDecide() {
     </div>
 
     ${(s.staffCostUp > 0 || s.priceDown > 0) ? `<div class="perma">
-      ${s.staffCostUp > 0 ? `<span class="perma-chip">人件費 +${yen(s.staffCostUp)}/人（最低賃金の引き上げ）</span>` : ""}
+      ${s.staffCostUp > 0 ? `<span class="perma-chip">非正規の人件費 +${yen(s.staffCostUp)}/人（最低賃金の引き上げ）</span>` : ""}
       ${s.priceDown > 0 ? `<span class="perma-chip">単価 −${yen(s.priceDown)}（報酬改定）</span>` : ""}
     </div>` : ""}
 
