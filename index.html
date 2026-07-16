@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.1-2026-07-16-advisor-rotate">
+<meta name="version" content="v4.2-2026-07-16-occ-actual">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -1642,7 +1642,8 @@ function viewDecide() {
   if (s.funds < 500000) warns.push("手元現金が細っています。報酬は約2ヶ月遅れで入るため、単月の支出に注意。");
   if (s.bcp < 30) warns.push("BCP対策度が低い状態です。災害が起きたときの被害が大きくなります。");
 
-  const occ = Math.round(bd.occRate * 100);
+  // 稼働率は「前月の実績」を表示する（当月の予測ではない＝レバーを動かしても動かない）。初月は実績なし。
+  const occ = App.lastResult ? Math.round(App.lastResult.breakdown.occRate * 100) : null;
   const risk = proj.riskPct;
   const rl = risk < 25 ? "low" : risk < 45 ? "mid" : "high";
   const rw = rl === "low" ? "低" : rl === "mid" ? "中" : "高";
@@ -1829,9 +1830,12 @@ function viewDecide() {
 
     <div class="preview">
       <div class="pv-item">
-        <span class="pv-label">予測 稼働率</span>
-        <span class="pv-occ${occ > 85 ? " hot" : ""}">${occ}%</span>
-        <span class="pv-sub">定員 ${B.teiin}名 / 月${CAP}回</span>
+        <span class="pv-label">前月の稼働率</span>
+        ${occ !== null
+          ? `<span class="pv-occ${occ > 85 ? " hot" : ""}">${occ}%</span>
+        <span class="pv-sub">定員 ${B.teiin}名 / 月${CAP}回</span>`
+          : `<span class="pv-occ">—</span>
+        <span class="pv-sub">初月（前月の実績なし）</span>`}
       </div>
       <div class="pv-item risk-${rl}">
         <span class="pv-label">事故リスク</span>
