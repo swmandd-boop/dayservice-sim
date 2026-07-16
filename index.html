@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.2-2026-07-16-occ-actual">
+<meta name="version" content="v4.3-2026-07-16-cost">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -465,14 +465,20 @@ button{font-family:var(--font);}
 
 const CONFIG = {
   base: {
-    initFunds: 4_000_000, initSat: 60, initStaff: 6, initRet: 60, initComp: 60,
+    initFunds: 4_000_000, initSat: 60, initStaff: 9, initRet: 60, initComp: 60,
     // 開始時の利用者構成（要介護度別・計40名）
     initMix: { yousien: 4, k1: 10, k2: 12, k3: 8, k4: 4, k5: 2 },
     mixShift: 0.18, // 受入方針に応じて構成が毎月このくらい寄っていく
-    baseThroughput: 78, // 職員1人が月に回せる回数（要介護度の手間で割る）
-    fixedCost: 1_750_000, staffCost: 280_000, maxDaysPerUser: 12,
+    baseThroughput: 66, // 職員1人が月に回せる回数（要介護度の手間で割る）
+    fixedCost: 630_000, maxDaysPerUser: 12,
+    // ② 職種別の人件費モデル（内部は精密・表示は「職員数◯名（常勤換算）」のまま）
+    //   固定コア＝運営基準の下限＝常勤4名（管理者・相談員・看護・介護正規）。可変＝介護非正規（＝staff−4名）。
+    //   賃金は月額・額面。事業主負担(×burden)を最後に掛ける。最低賃金引き上げ(staffCostUp)は非正規単価に上乗せ。
+    coreStaff: 4,
+    staffModel: { manager: 300_000, counselor: 300_000, nurse: 300_000,
+      careReg: 250_000, careNonReg: 170_000, burden: 1.15 },
     teiin: 25, operatingDays: 22, // 定員 × 稼働日 = 月間定員回数
-    usersMin: 20, usersMax: 60, staffMin: 2, staffMax: 12, retBomb: 40,
+    usersMin: 20, usersMax: 60, staffMin: 2, staffMax: 14, retBomb: 40,
     receivableSeed: 3_400_000, // 開始時の売掛（過去2ヶ月分の報酬）
     initBcp: 25, bcpDecay: 2, // BCP対策度（備え）と月次の自然減衰
     // staffCostUp / priceDown は最低賃金・報酬改定カードで恒久的に加算される
@@ -489,9 +495,9 @@ const CONFIG = {
   },
   // ② ケアの手厚さ（満足度と事業費に効く。単価は要介護度で決まる）
   care: {
-    basic: { label: "基本", thruMult: 1.15, varCost: 1_000, satT: 44, hint: "コストを抑える／満足度が下がり、利用者が離れていく" },
-    standard: { label: "標準", thruMult: 1.0, varCost: 1_200, satT: 60, hint: "基準どおりのケア" },
-    premium: { label: "手厚い", thruMult: 0.82, varCost: 1_700, satT: 80, hint: "満足度が上がる／手間が増え、職員1人が回せる回数は減る" },
+    basic: { label: "基本", thruMult: 1.15, varCost: 850, satT: 44, hint: "コストを抑える／満足度が下がり、利用者が離れていく" },
+    standard: { label: "標準", thruMult: 1.0, varCost: 1_000, satT: 60, hint: "基準どおりのケア" },
+    premium: { label: "手厚い", thruMult: 0.82, varCost: 1_300, satT: 80, hint: "満足度が上がる／手間が増え、職員1人が回せる回数は減る" },
   },
   // ③ 受入層（どの要介護度を積極的に受け入れるか）＝ 単価を決める最大の要因
   admission: {
@@ -884,6 +890,7 @@ function project(state, decision, event) {
   const dailyUsers = users0 * (0.6 + state.sat / 100 * 0.3) * ik.factor;
   const reqStaff = Math.max(3, Math.ceil(dailyUsers / 8));
   const understaffed = staff < reqStaff;
+  const coreBreach = staff < B.coreStaff; // 運営基準の下限（常勤コア4名）を割った＝指導対象
 
   // --- 管理者の工数 ---
   const need = requiredHours({ ...state, staff }, decision, reqStaff);
@@ -927,7 +934,7 @@ function project(state, decision, event) {
 
 
   // 加算算定可否（体制＋人員基準）
-  const kasanElig = ka.uplift > 0 && staff >= ka.reqStaff && state.ret >= ka.reqRet && !understaffed;
+  const kasanElig = ka.uplift > 0 && staff >= ka.reqStaff && state.ret >= ka.reqRet && !understaffed && !coreBreach;
   const kasanFailed = ka.uplift > 0 && !kasanElig;
   let uplift = kasanElig ? ka.uplift : 0, haircut = false;
   if (kasanElig && state.comp < 50) { uplift = Math.round(ka.uplift * 0.5); haircut = true; }
@@ -964,7 +971,17 @@ function project(state, decision, event) {
   const fixed = B.fixedCost + (ev.fixedUp ?? 0);
   const eventCost = ev.cost ?? 0;
   const eventCash = ev.cash ?? 0; // 補助金などの臨時収入
-  const staffTotal = staff * (B.staffCost + (state.staffCostUp || 0)); // 最低賃金は恒久的に人件費を上げる
+  // 人件費：職種別に積み上げる（内部は精密・表示は「職員数◯名」のまま）。
+  // 上位職から順にコア（管理者→相談員→看護→介護正規）を配置し、余った常勤換算が介護非正規。
+  // 職員を削ると人件費は下がる（＝削減できる）が、コア4名を割ると加算が飛び・指導対象になる。
+  const sm = B.staffModel;
+  const coreWages = [sm.manager, sm.counselor, sm.nurse, sm.careReg];
+  const coreCount = Math.min(staff, B.coreStaff);
+  let coreWage = 0;
+  for (let i = 0; i < coreCount; i++) coreWage += coreWages[i];
+  const nonReg = Math.max(0, staff - B.coreStaff); // 介護非正規（可変）＝標準5名
+  const nonRegWage = nonReg * (sm.careNonReg + (state.staffCostUp || 0)); // 最低賃金引上げは非正規単価に効く
+  const staffTotal = Math.round((coreWage + nonRegWage) * sm.burden); // 事業主負担（社保等）を最後に掛ける
   const variable = visits * c.varCost;
   let auditCost = 0, clawback = 0, auditNote = null;
   if (ev.audit) {
@@ -1007,6 +1024,7 @@ function project(state, decision, event) {
   add("comp", compTb, "追加施策（記録の整備・研修）");
   add("comp", ev.compT ?? 0, ev.title ? `出来事「${ev.title}」` : "出来事");
   add("comp", understaffed ? -15 : 0, "人員配置基準を満たしておらず運営が崩れている");
+  add("comp", coreBreach ? -20 : 0, "運営基準の必要人員（常勤コア）を割り、運営が成り立っていない");
   add("comp", hoursPen.compT, "請求・記録の事務に手が回らなかった");
 
   // 目標水準への収束（＝維持しないと自然に戻る）
@@ -1014,7 +1032,7 @@ function project(state, decision, event) {
   const retTarget = clamp(55 + st.retT + ik.retT + (decision.care === "premium" ? -2 : 0) + retTb
     + (ev.retT ?? 0) + (ev.retShock ?? 0) - crowd * 5 + hoursPen.retT, 0, 100);
   const compTarget = clamp(60 + st.compT + ik.compT + ka.compT + compTb + (ev.compT ?? 0)
-    + (understaffed ? -15 : 0) + hoursPen.compT, 0, 100);
+    + (understaffed ? -15 : 0) + (coreBreach ? -20 : 0) + hoursPen.compT, 0, 100);
 
   let sat = Math.round(conv(state.sat, satTarget, 0.4));
   let ret = Math.round(conv(state.ret, retTarget, 0.4));
@@ -1112,6 +1130,7 @@ function project(state, decision, event) {
   if (state.ret < 45) risk += 16; else if (state.ret < 55) risk += 7;
   if (staffLimited) risk += 8;
   if (understaffed) risk += 12;
+  if (coreBreach) risk += 12;
   if (decision.intake === "high") risk += 6;
   if (state.comp >= 70) risk -= 8;
   if (occRate > 0.85) risk += 8;
@@ -1120,7 +1139,7 @@ function project(state, decision, event) {
   return {
     breakdown: { visits, income, basePrice, unitPrice, uplift, kasanIncome, staffTotal, fixed, variable,
       initCost, auditCost, clawback, eventCost, eventCash, fixedUp: ev.fixedUp ?? 0, expense, pl,
-      staffLimited, understaffed, reqStaff, occRate, kasanFailed, haircut,
+      staffLimited, understaffed, coreBreach, reqStaff, occRate, kasanFailed, haircut,
       billingLoss, staffCostUp: ev.staffCostUp ?? 0, priceDown: ev.priceDown ?? 0,
       avgLevel, avgLoad, effThru, demand: Math.round(demand), staffCap, bottleneck, userCount: usersNow,
       hours: { need, alloc, careH, remaining, hoursGap, ratios, delegable: need.delegable, total: H } },
@@ -1630,6 +1649,7 @@ function viewDecide() {
   const bd = proj.breakdown, h = bd.hours;
 
   const warns = [];
+  if (bd.coreBreach) warns.push("運営基準を満たしていません（介護・看護等の必要人員を割っています）。指導対象となり、加算は算定できず、適正運営度が下がります。");
   if (bd.understaffed) warns.push(`人員配置基準を満たしていません（必要 約${bd.reqStaff}名）。加算は算定できず、適正運営度が下がります。`);
   if (s.ret < 45) warns.push("職員の定着度が危険水域です。離職の連鎖が起きる前に手を打つ判断を。");
   if (s.comp < 50) warns.push("適正運営度が低下しています。実地指導での返還や加算の減額につながります。");
@@ -2018,7 +2038,7 @@ function viewEnd() {
           const lv = v >= 60 ? "ok" : v >= 45 ? "mid" : "ng";
           return `<div class="hm ${lv}"><span class="hm-n">${n}</span><span class="hm-v">${Math.round(v)}</span></div>`;
         }).join("")}
-        <div class="hm ${final.staff >= 6 ? "ok" : final.staff >= 4 ? "mid" : "ng"}">
+        <div class="hm ${final.staff >= 8 ? "ok" : final.staff >= 4 ? "mid" : "ng"}">
           <span class="hm-n">職員数</span><span class="hm-v">${final.staff}名</span></div>
       </div>
       ${rotting ? `<div class="rot">数字の上では黒字です。しかし組織は壊れています。この状態のまま続ければ、
