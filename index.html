@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4-2026-07-16-advisor">
+<meta name="version" content="v4.1-2026-07-16-advisor-rotate">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -1382,47 +1382,47 @@ const ADVISOR_LINES = {
     2: "少しずつ慣れてきましたか。判断の材料は、大きく4つです。誰を受け入れるか、どこまで手厚くケアするか、職員をどう配置するか、加算を取りにいくか。どれか一つだけ、では回りません。バランスなんです。",
     3: "もうお気づきかもしれませんが……良いケアをしていても、それだけでは経営は成り立たないんです。利用者さんの満足も、職員の定着も、記録も、お金も。どれが欠けても、数ヶ月後に返ってきます。焦らず、一つずつ。",
   },
-  // 中盤以降：その月で最も深刻な1つ（順調なら承認）
+  // 中盤以降・深刻な懸念（率直に諫言）
   cash:  "所長、はっきり言います。手元の現金が危ういです。介護報酬は2ヶ月遅れで入ってきます。「黒字なのにお金がない」——これで潰れる事業所、本当にあるんです。今すぐ手を打ちましょう。",
   ret:   "所長、少し気になることが。最近、職員に疲れが見えます。人が辞めると、その穴埋めに追われて、また次の人が辞める……この繰り返しが一番こわい。「辞めない職場」をどう作るか、そろそろ考えどきかもしれません。",
-  occ:   "所長、もう少し利用者さんに来てもらえるといいのですが……。席は空いているのに、埋まっていない。もったいないです。ケアマネさんへの挨拶回り、一緒に考えましょうか。",
-  kasan: "所長、差し出がましいですが……うち、加算をほとんど取れていません。こんなに良いケアをしているのに、もったいないんです。体制さえ整えば、取れるはずの加算があります。一度、棚卸ししてみませんか。",
   comp:  "所長、記録が追いついていませんね。忙しいのは分かります。でも、実地指導が入ったら、まず見られるのがここです。「後で書く」が積もると、取り返しがつかなくなります。早めに立て直しましょう。",
-  bcp:   "所長、災害への備え、後回しになっていませんか。感染症も、地震も、水害も——起きてからでは間に合いません。備えは、平時にしか作れないんです。今のうちに、少しずつでも。",
-  heavy: "所長、最近、要介護度の重い方が増えてきましたね。ありがたいことですが……介助の手間は、確実に増えます。職員が疲れていないか、人手は足りているか。無理をすると、事故につながります。",
+  // 健全ゾーン：次に伸ばせる余地（月替わりでローテーション・叩き台）
+  growthOcc:   "所長、運営に余裕が出てきましたね。席にはまだ空きがあります。あと数人、来ていただけたら、それがそのまま収益になります。無理のない範囲で、少しずつ広げていきましょう。",
+  growthKasan: "所長、経営が安定してきましたね。せっかくここまで整えたのなら、加算をもう一段、狙ってみませんか。今の体制なら、十分に届くはずです。",
+  growthBcp:   "所長、順調な今だからこそ、お願いが一つ。災害への備え、いま少し固めておきませんか。余裕のあるうちにしか、備えは作れないんです。",
+  growthRet:   "所長、いい流れですね。次に効いてくるのは、職員の定着です。「辞めない職場」ができると、経営はぐっと楽になります。今のうちに、種をまいておきましょう。",
+  growthSat:   "所長、土台ができてきましたね。ここからは、もっと良いデイを目指す番です。利用者さんの満足をもう一段引き上げられたら、その評判が、新しい利用者を呼びます。",
+  // 全方位盤石／終盤
   good:  "所長、いい経営をされています。利用者さんにも職員にも、ちゃんと向き合えている。この調子でいきましょう。……私が言うことも、なくなってきましたね。",
   final: "所長、この1年、本当にお疲れさまでした。うまくいったことも、そうでないことも、全部これからの糧になります。このあと、1年の通期決算が出ます。数字だけでなく、「何を大事にしてきたか」も、一緒に振り返りましょう。",
 };
 
 /* 状態から相談員のひとことを選ぶ。読むだけ・戻り値は {tone, text}。
-   序盤(1-3月)は固定ガイド。中盤以降は最も深刻な1件を（叩き台の並び順で）、無ければ承認。
-   しきい値は判断画面の既存 warns（ret<45 / comp<50 / funds<500000 / bcp<30 / 稼働）に整合。 */
+   序盤(1-3月)は固定ガイド。深刻な懸念(cash/ret<45/comp<45)は率直に諫言。
+   懸念が無い健全ゾーンでは「次に伸ばせる余地」を候補から集め、month で巡回させて
+   同じ文言が続かないようにする（褒め一択の回避）。全方位盤石なら純粋な承認。
+   健全ゾーンのしきい値：occ<0.72 / 加算<active / bcp<55 / ret<62 / sat<68。 */
 function advisorComment(month, s, bd, mix) {
   if (month <= 3) return { tone: "guide", text: ADVISOR_LINES.guide[month] };
 
-  // 現金の先読み（介護報酬は約2ヶ月遅れ＝pipeline で入金）
+  // ① 深刻な懸念は率直に諫言（承認・助言より優先）。現金は2ヶ月遅れ入金を先読み。
   const cashEnd  = s.funds + (s.pipeline?.[0] || 0) - bd.expense;
   const cashEnd2 = cashEnd + (s.pipeline?.[1] || 0) - bd.expense;
-  const cashRisk = Math.min(cashEnd, cashEnd2) < 500000;
-  const praise = () => ({ tone: "good", text: month >= App.totalMonths ? ADVISOR_LINES.final : ADVISOR_LINES.good });
-
-  // ① 深刻な問題は率直に諫言（承認より優先）。既存 warns のしきい値に整合。
-  if (cashRisk)    return { tone: "alert", text: ADVISOR_LINES.cash };
+  if (Math.min(cashEnd, cashEnd2) < 500000) return { tone: "alert", text: ADVISOR_LINES.cash };
   if (s.ret < 45)  return { tone: "alert", text: ADVISOR_LINES.ret };
   if (s.comp < 45) return { tone: "alert", text: ADVISOR_LINES.comp };
 
-  // ② 大きな問題が無く全体が健全なら承認（新人を支える）——小さな伸びしろより優先。
-  //    これが無いと BCP 減衰等で褒めが永久に出ず「ダメ出し一辺倒」になる。
-  if (s.sat >= 60 && s.ret >= 55 && s.comp >= 55 && (bd.pl || 0) >= 0) return praise();
+  // ② 健全ゾーン：次に伸ばせる余地を集め、month % 候補数 で月替わりに助言する。
+  const growth = [];
+  if (bd.occRate < 0.72)                             growth.push(ADVISOR_LINES.growthOcc);
+  if ((bd.uplift || 0) < CONFIG.kasan.active.uplift) growth.push(ADVISOR_LINES.growthKasan);
+  if (s.bcp < 55)                                    growth.push(ADVISOR_LINES.growthBcp);
+  if (s.ret < 62)                                    growth.push(ADVISOR_LINES.growthRet);
+  if (s.sat < 68)                                    growth.push(ADVISOR_LINES.growthSat);
+  if (growth.length) return { tone: "good", text: growth[month % growth.length] };
 
-  // ③ 伸びしろは温かく1つだけ（影響の大きい順）。
-  if (bd.occRate < 0.6)           return { tone: "soft", text: ADVISOR_LINES.occ };
-  if ((bd.uplift || 0) === 0)     return { tone: "soft", text: ADVISOR_LINES.kasan };
-  if ((mix?.avgLevel || 0) > 2.8) return { tone: "soft", text: ADVISOR_LINES.heavy };
-  if (s.bcp < 20)                 return { tone: "soft", text: ADVISOR_LINES.bcp };
-
-  // ④ それ以外も承認。
-  return praise();
+  // ③ どれにも該当しない全方位盤石 → 純粋な承認（終盤は通期の振り返りへ）。
+  return { tone: "good", text: month >= App.totalMonths ? ADVISOR_LINES.final : ADVISOR_LINES.good };
 }
 
 /* ===================== 画面描画層 ===================== */
