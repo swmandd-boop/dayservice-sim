@@ -487,7 +487,7 @@ const CONFIG = {
     mid: { label: "標準", factor: 1.0, satT: 0, retT: 0, compT: 0, hint: "標準的な受入" },
     high: { label: "積極", factor: 1.12, satT: -8, retT: -8, compT: -6, hint: "稼働↑／現場疲弊・定着↓・記録が後回し" },
   },
-  // ② ケアの手厚さ（満足度と変動費に効く。単価は要介護度で決まる）
+  // ② ケアの手厚さ（満足度と事業費に効く。単価は要介護度で決まる）
   care: {
     basic: { label: "基本", thruMult: 1.15, varCost: 1_000, satT: 44, hint: "コストを抑える／満足度が下がり、利用者が離れていく" },
     standard: { label: "標準", thruMult: 1.0, varCost: 1_200, satT: 60, hint: "基準どおりのケア" },
@@ -960,7 +960,7 @@ function project(state, decision, event) {
   // 事務が回らないと請求ミス＝返戻が発生（収入から差し引かれる）
   const billingLoss = hoursPen.billing ? Math.round(income * 0.04) : 0;
   income -= billingLoss;
-  // 支出（カードによる固定費高騰・臨時コストを含む）
+  // 支出（カードによる事務費高騰・臨時コストを含む）
   const fixed = B.fixedCost + (ev.fixedUp ?? 0);
   const eventCost = ev.cost ?? 0;
   const eventCash = ev.cash ?? 0; // 補助金などの臨時収入
@@ -1922,9 +1922,9 @@ function viewResult() {
       <div class="bd-col">
         <div class="bd-col-title expense-t">支出の内訳</div>
         ${row("人件費", yen(bd.staffTotal))}
-        ${row("固定費", yen(bd.fixed))}
-        ${bd.fixedUp > 0 ? `<div class="bd-note">※ 光熱費・食材費の高騰で固定費が増えています。</div>` : ""}
-        ${row("変動費", yen(bd.variable))}
+        ${row("事務費", yen(bd.fixed))}
+        ${bd.fixedUp > 0 ? `<div class="bd-note">※ 光熱費・通信費の高騰で事務費が増えています。</div>` : ""}
+        ${row("事業費", yen(bd.variable))}
         ${bd.initCost > 0 ? row("施策費", yen(bd.initCost)) : ""}
         ${bd.auditCost > 0 ? row("実地指導対応", yen(bd.auditCost)) : ""}
         ${bd.clawback > 0 ? row("加算返還", yen(bd.clawback)) : ""}
