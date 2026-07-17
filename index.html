@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.5-2026-07-17-bottleneck">
+<meta name="version" content="v4.6-2026-07-17-balance">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -479,9 +479,9 @@ button{font-family:var(--font);}
 
 const CONFIG = {
   base: {
-    initFunds: 4_000_000, initSat: 60, initStaff: 9, initRet: 60, initComp: 60,
+    initFunds: 4_000_000, initSat: 60, initStaff: 10, initRet: 60, initComp: 60,
     // 開始時の利用者構成（要介護度別・計40名）
-    initMix: { yousien: 4, k1: 10, k2: 12, k3: 8, k4: 4, k5: 2 },
+    initMix: { yousien: 5, k1: 11, k2: 13, k3: 9, k4: 4, k5: 3 },
     mixShift: 0.18, // 受入方針に応じて構成が毎月このくらい寄っていく
     baseThroughput: 78, // 職員1人が月に回せる回数（要介護度の手間で割る）
     fixedCost: 1_750_000, staffCost: 280_000, maxDaysPerUser: 12,
@@ -538,7 +538,7 @@ const CONFIG = {
   },
   // ⑤ 追加施策（任意・複数選択可）
   initiatives: {
-    sales: { key: "sales", label: "営業強化", cost: 120_000, users: 4, hint: "新規利用者↑（−¥120,000）／稼働の余力がなければ活きない" },
+    sales: { key: "sales", label: "営業強化", cost: 120_000, users: 6, hint: "新規利用者↑↑（−¥120,000）／稼働の余力がなければ活きない" },
     spotrec: { key: "spotrec", label: "スポットレク", cost: 50_000, satBoost: 10, occBoost: 0.04, hint: "満足度↑・当月の来所↑（−¥50,000）／効果は定着度で変わる" },
     training: { key: "training", label: "職員研修", cost: 80_000, retBoost: 10, satBoost: 4, compBoost: 4, occMult: 0.97, hint: "定着↑・満足度↑・記録↑（−¥80,000）／当月は現場が薄く稼働微減" },
     records: { key: "records", label: "記録・書類の整備", cost: 40_000, compBoost: 12, hint: "適正運営度↑（−¥40,000）／実地指導・加算算定への備え" },
@@ -963,7 +963,7 @@ function project(state, decision, event) {
   const effThru = Math.max(20, Math.round((B.baseThroughput / avgLoad) * c.thruMult) - (kasanElig ? ka.thruPen : 0));
 
   // 需要：構成ごとの来所頻度が土台。満足度が低いと足が遠のく
-  const satAdj = clamp(0.80 + (state.sat / 100) * 0.35, 0.6, 1.12);
+  const satAdj = clamp(0.71 + (state.sat / 100) * 0.50, 0.6, 1.20);
   const occMult = (ev.occMult ?? 1) * occMultI;
   const demand = mixInfo.demand * satAdj * occMult;
 
@@ -1093,7 +1093,7 @@ function project(state, decision, event) {
   reconcile("comp", state.comp, comp);
   // --- 利用者数の増減（構成に反映される） ---
   const usersNow = mixInfo.total;
-  const usersTarget = clamp(38 + (sat - 55) * 0.6 + hoursPen.usersT, B.usersMin, B.usersMax);
+  const usersTarget = clamp(39 + (sat - 55) * 1.0 + hoursPen.usersT, B.usersMin, B.usersMax);
   let users = Math.round(conv(usersNow, usersTarget, 0.25) + salesUsers + (ev.users ?? 0));
   users = clamp(users, B.usersMin, B.usersMax);
   let curStaff = staff + (ev.dStaff ?? 0);
