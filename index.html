@@ -1911,16 +1911,16 @@ function whyBlock(label, key, r, meaning, suffix = "") {
 /* 「来所回数の決まり方」ブロック（結果画面）。
    来所回数 = min(需要, 職員上限, 定員) という経営構造そのものを見せる。
    3値・visits・稼働率はすべて既存の計算結果(breakdown)をそのまま参照し、再計算しない。
-   最小のカードを強調表示。同値のタイブレークは 定員 > 職員上限 > 需要
-   （より構造的な制約を優先して表示する）。 */
+   強調（▼）はエンジン内部の判定(bd.bottleneck)に統一する。表示側で独自の
+   優先順位を持たない（ソースオブトゥルースはエンジン一本）。 */
 function bottleneckBlock(bd) {
   const cards = [
     { key: "cap",    label: "定員",     v: CAP },
     { key: "staff",  label: "職員上限", v: Math.round(bd.staffCap) },
     { key: "demand", label: "需要",     v: bd.demand },
   ];
-  const minV = Math.min(...cards.map((c) => c.v));
-  const bn = cards.find((c) => c.v === minV); // 配列順＝タイブレーク優先順
+  const bnKey = bd.bottleneck === "定員" ? "cap" : bd.bottleneck === "職員" ? "staff" : "demand";
+  const bn = cards.find((c) => c.key === bnKey);
   const note = bn.key === "demand"
     ? "ボトルネック: 需要。利用希望が伸び悩んでいます。営業・ケアマネ連携が打ち手です。"
     : bn.key === "staff"
