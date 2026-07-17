@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.4-2026-07-17-minwage">
+<meta name="version" content="v4.5-2026-07-17-bottleneck">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -547,7 +547,7 @@ const CONFIG = {
 };
 
 /* ------------------------- 資金繰りの見える化（先行投資の判断材料） -------------------------
-   介護報酬は約2ヶ月遅れで入る。今月の施策費は「今」出ていくが、その効果で増えた収入は
+   介護報酬は約2ヶ月遅れで入る。今月の取組費用は「今」出ていくが、その効果で増えた収入は
    2ヶ月後にしか入らない。この時間差を見せないと、先行投資の判断ができない。
 ------------------------------------------------------------------------------------- */
 function cashForecast(state, projectedIncome, projectedExpense) {
@@ -1802,7 +1802,7 @@ function viewDecide() {
           <div class="init-desc">${esc(it.hint)}</div>
         </button>`;
       }).join("")}</div>
-      <div class="init-total">今月の施策費：<b>${yen(d.initiatives.reduce((a, k) => a + CONFIG.initiatives[k].cost, 0))}</b></div>
+      <div class="init-total">今月の取組費用：<b>${yen(d.initiatives.reduce((a, k) => a + CONFIG.initiatives[k].cost, 0))}</b></div>
     </div>
 
     ${(() => {
@@ -1981,7 +1981,7 @@ function viewResult() {
         ${row("事務費", yen(bd.fixed))}
         ${bd.fixedUp > 0 ? `<div class="bd-note">※ 光熱費・通信費の高騰で事務費が増えています。</div>` : ""}
         ${row("事業費", yen(bd.variable))}
-        ${bd.initCost > 0 ? row("施策費", yen(bd.initCost)) : ""}
+        ${bd.initCost > 0 ? row("取組費用（営業・研修等）", yen(bd.initCost)) : ""}
         ${bd.auditCost > 0 ? row("実地指導対応", yen(bd.auditCost)) : ""}
         ${bd.clawback > 0 ? row("加算返還", yen(bd.clawback)) : ""}
         ${bd.accidentCost > 0 ? row("事故対応", yen(bd.accidentCost)) : ""}
