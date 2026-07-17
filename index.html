@@ -420,6 +420,20 @@
 .adv-soft{border-left-color:var(--slate);}
 .adv-alert{border-left-color:var(--clay);background:#fbf1ec;}
 .adv-good{border-left-color:var(--green);background:#eef7f2;}
+/* 来所回数の決まり方（ボトルネック表示） */
+.bnk{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:16px;}
+.bnk-cap{font-size:13px;font-weight:800;margin-bottom:10px;}
+.bnk-cap small{font-weight:500;color:var(--muted);margin-left:4px;}
+.bnk-cards{display:flex;gap:10px;margin-bottom:10px;}
+.bnk-card{flex:1;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;text-align:center;}
+.bnk-card .bnk-l{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:2px;}
+.bnk-card .bnk-v{font-size:17px;font-weight:800;}
+.bnk-card.min{border-color:var(--clay);background:#fbf1ec;}
+.bnk-card.min .bnk-l{color:var(--clay);}
+.bnk-occ{font-size:12.5px;color:var(--ink);margin-bottom:8px;}
+.bnk-note{font-size:12px;line-height:1.7;border-radius:8px;padding:9px 11px;background:#f2f6f4;}
+.bnk-note.bn-staff,.bnk-note.bn-demand{background:#fbf1ec;}
+@media (max-width:480px){.bnk-cards{flex-direction:column;}}
 html{margin:0;padding:0;}
 body{padding:24px 16px;margin:0;}
 .frame{max-width:640px;margin:0 auto;}
@@ -1759,8 +1773,8 @@ function viewDecide() {
         <div class="mix-calc">
           <div class="mc"><span class="mc-l">平均単価</span><span class="mc-v">${yen(Math.round(mi.avgPrice))}</span></div>
           <div class="mc"><span class="mc-l">職員1人が回せる回数</span><span class="mc-v">${bd.effThru}回</span></div>
-          <div class="mc"><span class="mc-l">来所の需要</span><span class="mc-v">${bd.demand}回</span></div>
-          <div class="mc"><span class="mc-l">職員の処理上限</span><span class="mc-v">${Math.round(bd.staffCap)}回</span></div>
+          <div class="mc"><span class="mc-l">来所の需要（当月予測）</span><span class="mc-v">${bd.demand}回</span></div>
+          <div class="mc"><span class="mc-l">職員の処理上限（当月予測）</span><span class="mc-v">${Math.round(bd.staffCap)}回</span></div>
         </div>
         <div class="mix-bn bn-${bn === "職員" ? "staff" : bn === "定員" ? "cap" : "demand"}">
           いま収入を抑えているのは <b>${bn}</b> です。
@@ -1839,7 +1853,7 @@ function viewDecide() {
 
     <div class="preview">
       <div class="pv-item">
-        <span class="pv-label">前月の稼働率</span>
+        <span class="pv-label">前月稼働</span>
         ${occ !== null
           ? `<span class="pv-occ${occ > 85 ? " hot" : ""}">${occ}%</span>
         <span class="pv-sub">定員 ${B.teiin}名 / 月${CAP}回</span>`
@@ -1894,6 +1908,37 @@ function whyBlock(label, key, r, meaning, suffix = "") {
   </div>`;
 }
 
+/* 「来所回数の決まり方」ブロック（結果画面）。
+   来所回数 = min(需要, 職員上限, 定員) という経営構造そのものを見せる。
+   3値・visits・稼働率はすべて既存の計算結果(breakdown)をそのまま参照し、再計算しない。
+   最小のカードを強調表示。同値のタイブレークは 定員 > 職員上限 > 需要
+   （より構造的な制約を優先して表示する）。 */
+function bottleneckBlock(bd) {
+  const cards = [
+    { key: "cap",    label: "定員",     v: CAP },
+    { key: "staff",  label: "職員上限", v: Math.round(bd.staffCap) },
+    { key: "demand", label: "需要",     v: bd.demand },
+  ];
+  const minV = Math.min(...cards.map((c) => c.v));
+  const bn = cards.find((c) => c.v === minV); // 配列順＝タイブレーク優先順
+  const note = bn.key === "demand"
+    ? "ボトルネック: 需要。利用希望が伸び悩んでいます。営業・ケアマネ連携が打ち手です。"
+    : bn.key === "staff"
+      ? "ボトルネック: 職員。需要はあるのに受けきれず断っています（機会損失）。増員の検討を。"
+      : "ボトルネック: 定員。満床です。稼働100%は「これ以上受けられない」サインでもあります。";
+  return `<div class="bnk">
+    <div class="bnk-cap">来所回数の決まり方　<small>需要・職員上限・定員の一番小さいところで止まる</small></div>
+    <div class="bnk-cards">
+      ${cards.map((c) => `<div class="bnk-card${c.key === bn.key ? " min" : ""}">
+        <span class="bnk-l">${c.key === bn.key ? "▼ " : ""}${c.label}</span>
+        <span class="bnk-v">${c.v}回</span>
+      </div>`).join("")}
+    </div>
+    <div class="bnk-occ">稼働率 <b>${Math.round(bd.occRate * 100)}%</b>＝延べ ${bd.visits}回 ÷ 定員 ${CAP}回</div>
+    <div class="bnk-note bn-${bn.key}">${note}</div>
+  </div>`;
+}
+
 function viewResult() {
   const r = App.lastResult, bd = r.breakdown, s = App.state;
   const maxBar = Math.max(bd.income, bd.expense, 1);
@@ -1915,6 +1960,8 @@ function viewResult() {
         <div class="tug-track"><div class="tug-fill expense" style="width:${(bd.expense / maxBar) * 100}%"></div></div>
         <span class="tug-num">${yen(bd.expense)}</span></div>
     </div>
+
+    ${bottleneckBlock(bd)}
 
     <div class="bd-grid">
       <div class="bd-col">
