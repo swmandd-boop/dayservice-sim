@@ -1463,6 +1463,11 @@ const ADVISOR_LINES = {
   growthBcp:   "所長、順調な今だからこそ、お願いが一つ。災害への備え、いま少し固めておきませんか。余裕のあるうちにしか、備えは作れないんです。",
   growthRet:   "所長、いい流れですね。次に効いてくるのは、職員の定着です。「辞めない職場」ができると、経営はぐっと楽になります。今のうちに、種をまいておきましょう。",
   growthSat:   "所長、土台ができてきましたね。ここからは、もっと良いデイを目指す番です。利用者さんの満足をもう一段引き上げられたら、その評判が、新しい利用者を呼びます。",
+  // 配置基準モデルの4場面（2026-07-18監修済み）
+  capAlert:    "所長、いま利用希望をお断りしている状態です。ありがたい悲鳴ですが、今の職員数とケア体制で受けられる上限に当たっています。増員するか、体制を見直すか——受入の枠は広げられます。",
+  fullHouse:   "所長、満床です。定員が受け入れの天井ですから、ここから先は「誰に来ていただくか」の質の勝負になります。",
+  thinMargin:  "所長、基準は満たしていますが、現場はぎりぎりです。余裕のない配置は、ケアの質と職員の定着をじわじわ削ります。離職が出てからでは遅い——少し早めの一手を。",
+  genzanAlert: "所長、人員基準を欠いています。基本報酬が減算され、加算も止まっています。何よりまず、人の確保です。採用に動きましょう。",
   // 全方位盤石／終盤
   good:  "所長、いい経営をされています。利用者さんにも職員にも、ちゃんと向き合えている。この調子でいきましょう。……私が言うことも、なくなってきましたね。",
   final: "所長、この1年、本当にお疲れさまでした。うまくいったことも、そうでないことも、全部これからの糧になります。このあと、1年の通期決算が出ます。数字だけでなく、「何を大事にしてきたか」も、一緒に振り返りましょう。",
@@ -1480,10 +1485,16 @@ function advisorComment(month, s, bd, mix) {
   const cashEnd  = s.funds + (s.pipeline?.[0] || 0) - bd.expense;
   const cashEnd2 = cashEnd + (s.pipeline?.[1] || 0) - bd.expense;
   if (Math.min(cashEnd, cashEnd2) < 500000) return { tone: "alert", text: ADVISOR_LINES.cash };
+  // 人員基準欠如・減算中は現金に次ぐ緊急事態
+  if (bd.understaffed || s.coreShortPrev) return { tone: "alert", text: ADVISOR_LINES.genzanAlert };
   if (s.ret < 45)  return { tone: "alert", text: ADVISOR_LINES.ret };
   if (s.comp < 45) return { tone: "alert", text: ADVISOR_LINES.comp };
+  // 配置の状態コメント（受入上限に当たっている／余裕が薄い＝監修3・閾値110%）
+  if (bd.bottleneck === "受入上限") return { tone: "soft", text: ADVISOR_LINES.capAlert };
+  if (bd.marginRate < 1.10)         return { tone: "soft", text: ADVISOR_LINES.thinMargin };
 
-  // ② 健全ゾーン：次に伸ばせる余地を集め、month % 候補数 で月替わりに助言する。
+  // ② 健全ゾーン：満床は最優先で「質の勝負」を伝える（good寄り・監修2）
+  if (bd.bottleneck === "定員") return { tone: "good", text: ADVISOR_LINES.fullHouse };
   const growth = [];
   if (bd.occRate < 0.72 && bd.hijunCap > bd.visits + 22) growth.push(ADVISOR_LINES.growthOcc);
   if ((bd.uplift || 0) < CONFIG.kasan.active.uplift) growth.push(ADVISOR_LINES.growthKasan);
