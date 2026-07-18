@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.7-2026-07-18-staffing-model">
+<meta name="version" content="v4.7.1-2026-07-19">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -482,9 +482,9 @@ button{font-family:var(--font);}
 
 const CONFIG = {
   base: {
-    initFunds: 4_000_000, initSat: 60, initStaff: 12, initRet: 60, initComp: 60,
-    // 開始時の利用者構成（要介護度別・計45名）
-    initMix: { yousien: 5, k1: 11, k2: 13, k3: 9, k4: 4, k5: 3 },
+    initFunds: 4_000_000, initSat: 60, initStaff: 10, initRet: 60, initComp: 60,
+    // 開始時の利用者構成（要介護度別・計38名。初月需要≈358回≈稼働65%）
+    initMix: { yousien: 4, k1: 9, k2: 11, k3: 8, k4: 4, k5: 2 },
     mixShift: 0.18, // 受入方針に応じて構成が毎月このくらい寄っていく
     fixedCost: 1_750_000, staffCost: 280_000, maxDaysPerUser: 12,
     // --- 職員の職種別人件費（WAM＋運営基準）。「職員数」＝管理者含む全従事者の常勤換算 ---
@@ -759,6 +759,8 @@ function drawCard(state, month, totalMonths) {
 }
 
 const CAP = CONFIG.base.teiin * CONFIG.base.operatingDays; // 定員回数/月
+const OCC_NEAR_FULL = 0.90;
+const SALES_FULL_OCC = 0.97, SALES_DECAY_SPAN = 0.35, SALES_MIN_MULT = 0.15; // 営業逓減（v4.7.1） // 需要▼でもこの稼働率以上なら「ほぼ利用枠いっぱい」文言に切替（v4.7.1）
 
 /* ========================= 要介護度別の利用者構成 =========================
    デイの単価は要介護度で大きく変わる。重度者ほど単価は高いが、手間もかかり、
@@ -1127,13 +1129,18 @@ function project(state, decision, event) {
   reconcile("comp", state.comp, comp);
   // --- 利用者数の増減（構成に反映される） ---
   const usersNow = mixInfo.total;
-  const usersTarget = clamp(39 + (sat - 55) * 1.0 + hoursPen.usersT, B.usersMin, B.usersMax);
-  let users = Math.round(conv(usersNow, usersTarget, 0.25) + salesUsers + (ev.users ?? 0));
+  const usersTarget = clamp(33 + (sat - 55) * 1.0 + hoursPen.usersT, B.usersMin, B.usersMax);
+  // 営業・紹介の効きは前月稼働率で逓減（空きが少ないほど紹介は入らない・v4.7.1）
+  const gainMult = clamp((SALES_FULL_OCC - (state.prevOcc ?? 0.65)) / SALES_DECAY_SPAN, SALES_MIN_MULT, 1.0);
+  const effSales = salesUsers > 0 ? Math.max(1, Math.round(salesUsers * gainMult)) : 0;
+  const evUsersRaw = ev.users ?? 0;
+  const effEvUsers = evUsersRaw > 0 ? Math.max(1, Math.round(evUsersRaw * gainMult)) : evUsersRaw;
+  let users = Math.round(conv(usersNow, usersTarget, 0.25) + effSales + effEvUsers);
   users = clamp(users, B.usersMin, B.usersMax);
   let curStaff = staff + (ev.dStaff ?? 0);
 
-  add("users", salesUsers, "営業強化で新規を掘り起こした");
-  add("users", ev.users ?? 0, ev.title ? `出来事「${ev.title}」` : "出来事");
+  add("users", effSales, "営業強化で新規を掘り起こした");
+  add("users", effEvUsers, ev.title ? `出来事「${ev.title}」` : "出来事");
   add("users", hoursPen.usersT, "営業・ケアマネ回りに手が回らず紹介が細った");
   if (sat >= 65) add("users", 1, "満足度が高く、口コミで利用者が集まっている");
   else if (sat <= 48) add("users", -1, "満足度が低く、利用者が離れつつある");
@@ -1245,6 +1252,7 @@ function resolveMonth(state, decision, event) {
     event, initiatives: p.initiatives, decisionLabels: p.decisionLabels, reasons: p.reasons,
     newState: { ...state, month: state.month + 1, ...after, pipeline: newPipe,
       coreShortPrev: after.staff < CONFIG.base.coreStaff, // コア割れ翌月に減算を適用（D-3）
+      prevOcc: bd.occRate,                                 // 営業逓減の基準（v4.7.1）
       marginRate: bd.marginRate,                          // 離職確率の連動に使う（D-2）
       staffCostUp: (state.staffCostUp || 0) + (bd.staffCostUp || 0),   // 最低賃金は以後ずっと効く
       priceDown: (state.priceDown || 0) + (bd.priceDown || 0) },        // 報酬改定も以後ずっと効く
@@ -1465,7 +1473,7 @@ const ADVISOR_LINES = {
   growthSat:   "所長、土台ができてきましたね。ここからは、もっと良いデイを目指す番です。利用者さんの満足をもう一段引き上げられたら、その評判が、新しい利用者を呼びます。",
   // 配置基準モデルの4場面（2026-07-18監修済み）
   capAlert:    "所長、いま利用希望をお断りしている状態です。ありがたい悲鳴ですが、今の職員数とケア体制で受けられる上限に当たっています。増員するか、体制を見直すか——受入の枠は広げられます。",
-  fullHouse:   "所長、満床です。定員が受け入れの天井ですから、ここから先は「誰に来ていただくか」の質の勝負になります。",
+  fullHouse:   "所長、利用枠がいっぱいです。定員が受け入れの天井ですから、ここから先は「誰に来ていただくか」の質の勝負になります。",
   thinMargin:  "所長、基準は満たしていますが、現場はぎりぎりです。余裕のない配置は、ケアの質と職員の定着をじわじわ削ります。離職が出てからでは遅い——少し早めの一手を。",
   genzanAlert: "所長、人員基準を欠いています。基本報酬が減算され、加算も止まっています。何よりまず、人の確保です。採用に動きましょう。",
   // 全方位盤石／終盤
@@ -1493,7 +1501,7 @@ function advisorComment(month, s, bd, mix) {
   if (bd.bottleneck === "受入上限") return { tone: "soft", text: ADVISOR_LINES.capAlert };
   if (bd.marginRate < 1.10)         return { tone: "soft", text: ADVISOR_LINES.thinMargin };
 
-  // ② 健全ゾーン：満床は最優先で「質の勝負」を伝える（good寄り・監修2）
+  // ② 健全ゾーン：利用枠いっぱいは最優先で「質の勝負」を伝える（good寄り・監修2）
   if (bd.bottleneck === "定員") return { tone: "good", text: ADVISOR_LINES.fullHouse };
   const growth = [];
   if (bd.occRate < 0.72 && bd.hijunCap > bd.visits + 22) growth.push(ADVISOR_LINES.growthOcc);
@@ -1552,7 +1560,7 @@ function startGame(mode) {
     users: LEVELS.reduce((a, L) => a + (B.initMix[L.key] || 0), 0),
     ret: B.initRet, comp: B.initComp, bcp: B.initBcp,
     pipeline: [B.receivableSeed, B.receivableSeed],
-    staffCostUp: 0, priceDown: 0, policy: null, coreShortPrev: false, marginRate: 1.3,
+    staffCostUp: 0, priceDown: 0, policy: null, coreShortPrev: false, marginRate: 1.3, prevOcc: 0.65,
   };
   s0.card = drawCard(s0, 1, months);
   App.state = s0;
@@ -1832,7 +1840,6 @@ function viewDecide() {
         </div>
         <div class="mix-calc">
           <div class="mc"><span class="mc-l">平均単価</span><span class="mc-v">${yen(Math.round(mi.avgPrice))}</span></div>
-          <div class="mc"><span class="mc-l">受入上限（当月予測）</span><span class="mc-v">${bd.hijunCap}回</span></div>
           <div class="mc"><span class="mc-l">来所の需要（当月予測）</span><span class="mc-v">${bd.demand}回</span></div>
           <div class="mc"><span class="mc-l">必要人員（見込み）</span><span class="mc-v">約${bd.reqStaff}名</span></div>
         </div>
@@ -1974,23 +1981,27 @@ function whyBlock(label, key, r, meaning, suffix = "") {
    強調（▼）はエンジン内部の判定(bd.bottleneck)に統一する。表示側で独自の
    優先順位を持たない（ソースオブトゥルースはエンジン一本）。 */
 function bottleneckBlock(bd) {
+  // カードは「定員／需要」の2枚（受入上限カードはv4.7.1で撤去。エンジンのminは安全装置として維持）
   const cards = [
-    { key: "cap",    label: "定員",     v: CAP },
-    { key: "staff",  label: "受入上限（配置）", v: bd.hijunCap },
-    { key: "demand", label: "需要",     v: bd.demand },
+    { key: "cap",    label: "定員", v: CAP },
+    { key: "demand", label: "需要", v: bd.demand },
   ];
-  const bnKey = bd.bottleneck === "定員" ? "cap" : bd.bottleneck === "受入上限" ? "staff" : "demand";
-  const bn = cards.find((c) => c.key === bnKey);
-  const note = bn.key === "demand"
-    ? "ボトルネック: 需要。利用希望が伸び悩んでいます。営業・ケアマネ連携が打ち手です。"
-    : bn.key === "staff"
-      ? "ボトルネック: 配置。今の職員数・ケア体制で受けられる上限です。増員か、体制の見直しで広がります。"
-      : "ボトルネック: 定員。満床です。稼働100%は「これ以上受けられない」サインでもあります。";
+  const isHijun = bd.bottleneck === "受入上限";
+  const bnKey = bd.bottleneck === "定員" ? "cap" : "demand";
+  // 受入上限が縛った月は▼をカードに付けず、警告文で示す（受けられなかった回数付き）
+  const lost = isHijun ? Math.max(0, Math.floor(Math.min(bd.demand, CAP)) - bd.visits) : 0;
+  const note = isHijun
+    ? `今の職員数で基準を守れる受入を超える希望がありました（${lost}回分）。増員で受入を広げられます。`
+    : bnKey === "demand"
+      ? (bd.occRate >= OCC_NEAR_FULL
+        ? "ほぼ利用枠いっぱいです。稼働率100%に近い状況です。ここから先は受け入れの質と体制の維持が焦点です。"
+        : "ボトルネック: 需要。利用希望が伸び悩んでいます。営業・ケアマネ連携が打ち手です。")
+      : "利用枠がいっぱいです。定員が受け入れの天井です。";
   return `<div class="bnk">
-    <div class="bnk-cap">来所回数の決まり方　<small>需要・定員・受入上限（配置）の一番小さいところで止まる</small></div>
+    <div class="bnk-cap">来所回数の決まり方　<small>需要と定員の一番小さいところで止まる</small></div>
     <div class="bnk-cards">
-      ${cards.map((c) => `<div class="bnk-card${c.key === bn.key ? " min" : ""}">
-        <span class="bnk-l">${c.key === bn.key ? "▼ " : ""}${c.label}</span>
+      ${cards.map((c) => `<div class="bnk-card${!isHijun && c.key === bnKey ? " min" : ""}">
+        <span class="bnk-l">${!isHijun && c.key === bnKey ? "▼ " : ""}${c.label}</span>
         <span class="bnk-v">${c.v}回</span>
       </div>`).join("")}
     </div>
@@ -1998,7 +2009,7 @@ function bottleneckBlock(bd) {
       <span class="margin-badge ${bd.understaffed ? "margin-bad" : bd.marginRate < 1.05 ? "margin-warn" : "margin-ok"}">
         ${bd.understaffed ? "⚠人員基準欠如" : `配置余裕 ${Math.round(bd.marginRate * 100)}%`}（必要${bd.nqReal.toFixed(1)}名/現在${bd.staff}名）
       </span></div>
-    <div class="bnk-note bn-${bn.key}">${note}</div>
+    <div class="bnk-note bn-${isHijun ? "staff" : bnKey}">${note}</div>
   </div>`;
 }
 
