@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.6-2026-07-17-balance">
+<meta name="version" content="v4.7-2026-07-18-staffing-model">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -434,6 +434,9 @@
 .bnk-note{font-size:12px;line-height:1.7;border-radius:8px;padding:9px 11px;background:#f2f6f4;}
 .bnk-note.bn-staff,.bnk-note.bn-demand{background:#fbf1ec;}
 @media (max-width:480px){.bnk-cards{flex-direction:column;}}
+.seg-btn.disabled{opacity:.35;cursor:not-allowed;}
+.margin-badge{display:inline-block;font-size:11.5px;font-weight:700;border-radius:8px;padding:3px 9px;margin-left:8px;}
+.margin-ok{background:#eef7f2;color:#2f8f6b;}.margin-warn{background:#fdf3e4;color:#b06a12;}.margin-bad{background:#fbeee9;color:#c15334;}
 html{margin:0;padding:0;}
 body{padding:24px 16px;margin:0;}
 .frame{max-width:640px;margin:0 auto;}
@@ -479,15 +482,15 @@ button{font-family:var(--font);}
 
 const CONFIG = {
   base: {
-    initFunds: 4_000_000, initSat: 60, initStaff: 10, initRet: 60, initComp: 60,
-    // 開始時の利用者構成（要介護度別・計40名）
+    initFunds: 4_000_000, initSat: 60, initStaff: 12, initRet: 60, initComp: 60,
+    // 開始時の利用者構成（要介護度別・計45名）
     initMix: { yousien: 5, k1: 11, k2: 13, k3: 9, k4: 4, k5: 3 },
     mixShift: 0.18, // 受入方針に応じて構成が毎月このくらい寄っていく
-    baseThroughput: 78, // 職員1人が月に回せる回数（要介護度の手間で割る）
     fixedCost: 1_750_000, staffCost: 280_000, maxDaysPerUser: 12,
     // --- 職員の職種別人件費（WAM＋運営基準）。「職員数」＝管理者含む全従事者の常勤換算 ---
-    // 固定コア(運営基準の下限≒管理者/相談員/看護/介護正規で常勤4名相当)＋介護非正規(可変)。
-    coreStaff: 4, coreWage: 1_400_000, partWage: 190_000, employerBurden: 1.15,
+    // 固定コア＝管理者1・生活相談員1・看護1（各30万）＋介護正規2（各25万）＝5名・140万。
+    // 非正規P＝staff−5（人件費・最低賃金の対象）。介護換算数C＝介護正規2＋P＝staff−3。
+    coreStaff: 5, coreWage: 1_400_000, partWage: 190_000, employerBurden: 1.15,
     // 経費は「収入×経費率」で構造化（実額固定をやめ、収入変動でも経費率が安定）
     adminExpenseRate: 0.18, // 事務費＝収入の18%（家賃・光熱・通信・減価償却）
     serviceExpenseRate: 0.07, // 事業費＝収入の7%（食材・消耗品）→ 合計経費率25%
@@ -508,33 +511,34 @@ const CONFIG = {
     high: { label: "積極", factor: 1.12, satT: -8, retT: -8, compT: -6, hint: "稼働↑／現場疲弊・定着↓・記録が後回し" },
   },
   // ② ケアの手厚さ（満足度と事業費に効く。単価は要介護度で決まる）
+  // capF＝受入上限係数(層1・≦1.0)／loadF＝必要人員の負荷係数(層2・≧1.0)
   care: {
-    basic: { label: "基本", thruMult: 1.15, varCost: 1_000, satT: 44, hint: "コストを抑える／満足度が下がり、利用者が離れていく" },
-    standard: { label: "標準", thruMult: 1.0, varCost: 1_200, satT: 60, hint: "基準どおりのケア" },
-    premium: { label: "手厚い", thruMult: 0.82, varCost: 1_700, satT: 80, hint: "満足度が上がる／手間が増え、職員1人が回せる回数は減る" },
+    basic: { label: "基本", capF: 1.00, loadF: 0.90, satT: 44, hint: "コストを抑える／体制は軽いが、満足度が下がり利用者が離れていく" },
+    standard: { label: "標準", capF: 1.00, loadF: 1.00, satT: 60, hint: "基準どおりのケア" },
+    premium: { label: "手厚い", capF: 0.85, loadF: 1.15, satT: 80, hint: "満足度が上がる／手間が増え、受入の余地と配置の余裕を消費する" },
   },
   // ③ 受入層（どの要介護度を積極的に受け入れるか）＝ 単価を決める最大の要因
   admission: {
-    light: { label: "軽度中心", target: "light",
+    light: { label: "軽度中心", target: "light", capF: 1.00, loadF: 1.00,
       hint: "要支援・要介護1-2が中心／単価は低いが手間も少ない。頭数を集めないと収入にならない" },
-    mixed: { label: "バランス", target: "mixed",
+    mixed: { label: "バランス", target: "mixed", capF: 1.00, loadF: 1.05,
       hint: "幅広く受け入れる／標準的な構成" },
-    heavy: { label: "重度対応", target: "heavy",
-      hint: "要介護3-5を積極的に／単価は高く来所も安定。ただし手間がかかり、職員が足りないと回せない" },
+    heavy: { label: "重度対応", target: "heavy", capF: 0.85, loadF: 1.15,
+      hint: "要介護3-5を積極的に／単価は高く来所も安定。ただし手間が重く、受入の余地と配置の余裕を消費する" },
   },
   // ③ 人員体制
   staffing: {
-    cut: { label: "絞る", dStaff: -1, retT: -18, compT: -6, hint: "人件費↓／負担集中・定着↓↓・記録が滞る" },
+    cut: { label: "絞る", dStaff: -1, retT: -18, compT: -6, hint: "人件費↓／負担集中・定着↓↓・記録が滞る（コア5名を割る削減はできない）" },
     keep: { label: "維持", dStaff: 0, retT: 0, compT: 0, hint: "現状維持" },
     hire: { label: "増員", dStaff: 1, retT: 14, compT: 2, hint: "人件費↑／体制に余裕・定着↑・記録が整う" },
   },
   // ④ 加算・機能訓練体制（体制＋人員基準を満たして初めて算定）
   kasan: {
-    none: { label: "取り組まない", uplift: 0, thruPen: 0, reqStaff: 0, reqRet: 0, compT: 0, satT: 0, hint: "加算なし。基本単価のみ" },
-    standard: { label: "標準取得", uplift: 1_100, thruPen: 3, reqStaff: 5, reqRet: 0, compT: -3, satT: 0,
-      hint: "入浴介助・提供体制等／単価+¥1,100・要 職員5名以上" },
-    active: { label: "積極取得", uplift: 2_600, thruPen: 8, reqStaff: 6, reqRet: 55, compT: -6, satT: 4,
-      hint: "個別機能訓練＋LIFE等／単価+¥2,600・要 職員6名&定着55／組織が健全でないと維持できない" },
+    none: { label: "取り組まない", uplift: 0, capF: 1.00, loadF: 1.00, reqRet: 0, compT: 0, satT: 0, hint: "加算なし。基本単価のみ" },
+    standard: { label: "標準取得", uplift: 1_100, capF: 0.97, loadF: 1.05, reqRet: 0, compT: -3, satT: 0,
+      hint: "入浴介助・提供体制等／単価+¥1,100・体制の手間が受入枠と配置の余裕に効く" },
+    active: { label: "積極取得", uplift: 2_600, capF: 0.88, loadF: 1.10, reqRet: 55, compT: -6, satT: 4,
+      hint: "自立支援・LIFE等の体制加算／単価+¥2,600・要 定着55／体制の負荷は掲げた時点で発生する" },
   },
   // ⑤ 追加施策（任意・複数選択可）
   initiatives: {
@@ -581,7 +585,7 @@ function diagnoseHealth(state) {
   if (state.sat < 40) issues.push({ level: "bad", text: "利用者の満足度が低く、利用者離れが進みます。" });
   else if (state.sat < 52) issues.push({ level: "warn", text: "満足度が下がっています。稼働率にじわじわ効いてきます。" });
 
-  if (state.staff <= 3) issues.push({ level: "bad", text: "職員数が限界です。基準を満たせず、加算も取れません。" });
+  if (state.staff < CONFIG.base.coreStaff) issues.push({ level: "bad", text: "コア職員を割っています。基本報酬の減算対象です。増員で解消を。" });
   if (state.bcp < 25) issues.push({ level: "warn", text: "災害への備えがほとんどありません。" });
   return issues;
 }
@@ -595,7 +599,7 @@ const POLICIES = {
   quality: {
     key: "quality", label: "地域密着・質重視",
     desc: "手厚いケアで満足度を高め、加算をしっかり取りにいく。人にも投資する。",
-    tradeoff: "人件費と事務負担が重い。時間はいつも足りない。",
+    tradeoff: "人件費と事務負担が重い。人を増やし続けられるかが生命線。",
     set: { intake: "mid", care: "premium", staffing: "hire", kasan: "active", admission: "heavy",
       hours: { admin: 30, sales: 15, people: 25, family: 30 } },
   },
@@ -657,7 +661,10 @@ const CARDS = [
   { id: "rehire", type: "good", title: "退職者の復職", w: 4, reqRet: 60, dStaff: 1, desc: "働きやすい職場と評判が立ち、元職員が戻ってきた。" },
   // 試練
   { id: "compet", type: "bad", title: "近隣に競合オープン", w: 8, users: -5, desc: "利用者が流出。満足度による差別化と回復力が問われる。" },
-  { id: "quit", type: "bad", title: "ベテラン職員の退職", w: 9, dStaff: -1, retShock: -8, desc: "欠員発生。日頃の人への投資が問われる。" },
+  { id: "quit", type: "bad", title: "ベテラン職員の退職",
+    // 配置余裕・定着が低い経営ほど起きやすい（w3〜12・D-2）
+    w: (st) => 3 + ((st.marginRate ?? 1.3) < 1.10 ? 3 : 0) + ((st.marginRate ?? 1.3) < 1.00 ? 3 : 0) + (st.ret < 50 ? 3 : 0),
+    dStaff: -1, retShock: -8, desc: "欠員発生。日頃の人への投資が問われる。" },
   { id: "claim", type: "bad", title: "家族からのクレーム", w: 8, satShock: -8, compMitig: true, desc: "対応に追われる。記録が整っていれば説明責任を果たせる。" },
   { id: "flu", type: "bad", title: "感染症の流行", w: 9, season: [12, 1, 2], occMult: 0.88, bcpMitig: true, desc: "利用控えで稼働が下がる。感染対策の備えが効く。" },
   { id: "heat", type: "bad", title: "記録的猛暑", w: 6, season: [7, 8], occMult: 0.93, desc: "夏場の来所減。季節要因も経営に効く。" },
@@ -744,9 +751,10 @@ function drawCard(state, month, totalMonths) {
     return true;
   });
   if (!pool.length) return null;
-  const total = pool.reduce((s, c) => s + c.w, 0);
+  const wOf = (c) => (typeof c.w === "function" ? c.w(state) : c.w);
+  const total = pool.reduce((s, c) => s + wOf(c), 0);
   let r = Math.random() * total;
-  for (const c of pool) { r -= c.w; if (r <= 0) return applyMitigation(c, state); }
+  for (const c of pool) { r -= wOf(c); if (r <= 0) return applyMitigation(c, state); }
   return applyMitigation(pool[pool.length - 1], state);
 }
 
@@ -843,6 +851,7 @@ const TASKS = {
 
 // 各業務に「本来必要な時間」を算出する
 function requiredHours(state, decision, reqStaff) {
+  // reqStaff＝必要人員(質基準)の切り上げ。不足は管理者の現場穴埋め、余剰は事務委譲に回る
   const shortage = Math.max(0, reqStaff - state.staff);
   // 管理者は常に現場を一定時間持つ（兼務）。職員が足りなければ、その穴埋めが上乗せされる
   const care = CONFIG.base.managerBaseCare + shortage * 35 + (decision.intake === "high" ? 12 : 0);
@@ -899,14 +908,58 @@ function project(state, decision, event) {
   let bcpBoost = 0;
   if (inits.includes("bcp")) { const i = CONFIG.initiatives.bcp; initCost += i.cost; bcpBoost += i.bcpBoost; }
 
-  const staff = clamp(state.staff + st.dStaff, B.staffMin, B.staffMax);
+  // 人員レバー: 下限はコア5名（プレイヤーは操作でコア割れを選べない）。
+  // イベント(離職等)でコア割れ中は、レバーでの削減は不可・増員のみ可。
+  const dStaffLever = st.dStaff < 0 && state.staff + st.dStaff < B.coreStaff ? 0 : st.dStaff;
+  const staff = clamp(state.staff + dStaffLever, B.staffMin, B.staffMax);
+  // レバー効果(retT/compT)は実際に人数が動いた月のみ（上限・下限到達時の無償効果を廃止）
+  const staffChanged = staff !== state.staff;
+  const stRetT = staffChanged ? st.retT : 0;
+  const stCompT = staffChanged ? st.compT : 0;
 
-  // 人員配置基準：1日平均利用者に対する必要職員
-  const users0 = LEVELS.reduce((a, L) => a + (state.mix?.[L.key] || 0), 0);
-  const dailyUsers = users0 * (0.6 + state.sat / 100 * 0.3) * ik.factor;
-  const reqStaff = Math.max(3, Math.ceil(dailyUsers / 8));
-  // 利用者数ベースの不足、または固定コア(運営基準の下限)割れ＝基準違反
-  const understaffed = staff < reqStaff || staff < B.coreStaff;
+  // 介護換算数C＝介護正規2＋非正規（イベント欠員は非正規→介護正規の順）。C=0なら受入0。
+  const C = Math.max(0, staff - 3);
+  // 層1: 受入上限（崖）＝配置基準の趣旨に沿った簡易モデル。係数はレバー設定に即時追従。
+  const loadAll = c.loadF * CONFIG.admission[decision.admission].loadF * ka.loadF;
+  const capDay = C >= 1 ? Math.floor((15 + 5 * (C - 1)) * c.capF * CONFIG.admission[decision.admission].capF * ka.capF) : 0;
+  const hijunCap = capDay * B.operatingDays; // 受入上限（回/月）
+  // コア割れ（職員5名未満）＝人員基準欠如
+  const understaffed = staff < B.coreStaff;
+
+
+
+  // 加算算定可否（体制要件。人数要件は配置基準モデルに一本化＝加算別最低人数は廃止）
+  const kasanElig = ka.uplift > 0 && state.ret >= ka.reqRet && !understaffed && !state.coreShortPrev;
+  const kasanFailed = ka.uplift > 0 && !kasanElig;
+  let uplift = kasanElig ? ka.uplift : 0, haircut = false;
+  if (kasanElig && state.comp < 50) { uplift = Math.round(ka.uplift * 0.5); haircut = true; }
+  // --- 利用者構成から単価・需要・手間を算出する ---
+  const mixInfo = analyzeMix(state.mix);
+  const avgLevel = mixInfo.avgLevel;
+  const avgLoad = mixInfo.avgLoad;
+
+  // 需要：構成ごとの来所頻度が土台。満足度が低いと足が遠のく
+  const satAdj = clamp(0.71 + (state.sat / 100) * 0.50, 0.6, 1.20);
+  const occMult = (ev.occMult ?? 1) * occMultI;
+  const demand = mixInfo.demand * satAdj * occMult * ik.factor; // 受入方針で受入の間口を絞る/広げる
+
+  // 来所回数＝min(需要, 定員, 受入上限)。職員数は処理能力ではなく配置基準経由で効く。
+  const visits = Math.max(0, Math.floor(Math.min(demand, CAP, hijunCap)));
+  // タイは 受入上限 > 定員 > 需要 の順（配置はプレイヤーの選択の結果＝行動可能情報を優先）
+  const hijunLimited = hijunCap <= Math.min(demand, CAP);
+  const capLimited = !hijunLimited && CAP <= Math.min(demand, hijunCap);
+  const demandLimited = !hijunLimited && !capLimited;
+  const bottleneck = hijunLimited ? "受入上限" : capLimited ? "定員" : "需要";
+  const occRate = visits / CAP;
+
+  // 層2: 配置余裕率（実績ベース）。余裕が薄いと満足度に「じわり」効く。
+  const uDay = visits / B.operatingDays;
+  const nqReal = B.coreStaff + Math.max(1, (uDay - 15) / 5 + 1) * loadAll;
+  const M = staff / nqReal;
+  const marginT = clamp(Math.round((M - 1.15) * 12), -6, 4);
+
+  // 必要人員（質基準）: 来所実績ベース。判断画面の「見込み」も同じ式（同月のprojectを共有）
+  const reqStaff = Math.ceil(nqReal);
 
   // --- 管理者の工数 ---
   const need = requiredHours({ ...state, staff }, decision, reqStaff);
@@ -949,36 +1002,12 @@ function project(state, decision, event) {
   };
 
 
-  // 加算算定可否（体制＋人員基準）
-  const kasanElig = ka.uplift > 0 && staff >= ka.reqStaff && state.ret >= ka.reqRet && !understaffed;
-  const kasanFailed = ka.uplift > 0 && !kasanElig;
-  let uplift = kasanElig ? ka.uplift : 0, haircut = false;
-  if (kasanElig && state.comp < 50) { uplift = Math.round(ka.uplift * 0.5); haircut = true; }
-  // --- 利用者構成から単価・需要・手間を算出する ---
-  const mixInfo = analyzeMix(state.mix);
-  const avgLevel = mixInfo.avgLevel;
-  const avgLoad = mixInfo.avgLoad;
-
-  // 職員1人が回せる回数：要介護度の手間とケアの手厚さで決まる
-  const effThru = Math.max(20, Math.round((B.baseThroughput / avgLoad) * c.thruMult) - (kasanElig ? ka.thruPen : 0));
-
-  // 需要：構成ごとの来所頻度が土台。満足度が低いと足が遠のく
-  const satAdj = clamp(0.71 + (state.sat / 100) * 0.50, 0.6, 1.20);
-  const occMult = (ev.occMult ?? 1) * occMultI;
-  const demand = mixInfo.demand * satAdj * occMult;
-
-  const staffCap = staff * effThru;
-  const visits = Math.max(0, Math.floor(Math.min(demand, staffCap, CAP)));
-  const staffLimited = staffCap < Math.min(demand, CAP);
-  const demandLimited = demand < Math.min(staffCap, CAP);
-  const capLimited = CAP <= Math.min(demand, staffCap);
-  const bottleneck = staffLimited ? "職員" : capLimited ? "定員" : "需要";
-  const occRate = visits / CAP;
-
   // 収入：平均単価は要介護度の構成で決まる
   const basePrice = Math.round(mixInfo.avgPrice) - (state.priceDown || 0);
+  // 人員基準欠如減算: コア割れ発生の翌月〜解消の翌月、基本報酬のみ×70%（30%減・加算は対象外）
+  const genzan = state.coreShortPrev ? Math.round(visits * basePrice * 0.30) : 0;
   const unitPrice = basePrice + uplift;
-  let income = visits * unitPrice;
+  let income = visits * unitPrice - genzan;
   const kasanIncome = visits * uplift;
   // 事務が回らないと請求ミス＝返戻が発生（収入から差し引かれる）
   const billingLoss = hoursPen.billing ? Math.round(income * 0.04) : 0;
@@ -988,8 +1017,10 @@ function project(state, decision, event) {
   const fixed = Math.round(income * B.adminExpenseRate) + (ev.fixedUp ?? 0); // 事務費
   const eventCost = ev.cost ?? 0;
   const eventCash = ev.cash ?? 0; // 補助金などの臨時収入
-  // 人件費：固定コア(常勤4名相当)＋介護非正規(staff−4名・最低賃金ベース)×事業主負担1.15
-  const staffTotal = Math.round((B.coreWage + Math.max(0, staff - B.coreStaff) * (B.partWage + (state.staffCostUp || 0))) * B.employerBurden);
+  // 人件費：コア5名(140万)＋非正規(staff−5名)×事業主負担1.15。
+  // コア割れ月は欠員職種の実単価を控除（欠員は非正規→介護正規25万×2→看護30万の順）
+  const coreDeduct = staff >= 5 ? 0 : staff === 4 ? 250_000 : staff === 3 ? 500_000 : 800_000;
+  const staffTotal = Math.round((B.coreWage - coreDeduct + Math.max(0, staff - B.coreStaff) * (B.partWage + (state.staffCostUp || 0))) * B.employerBurden);
   const variable = Math.round(income * B.serviceExpenseRate); // 事業費
   let auditCost = 0, clawback = 0, auditNote = null;
   if (ev.audit) {
@@ -1014,10 +1045,11 @@ function project(state, decision, event) {
   add("sat", satTb, "追加施策（レク・研修）");
   add("sat", (ev.satT ?? 0) + (ev.satShock ?? 0), ev.title ? `出来事「${ev.title}」` : "出来事");
   add("sat", -crowd * 8, "定員ぎりぎりの過密運営で目が行き届かない");
+  add("sat", marginT, marginT >= 0 ? "配置に余裕があり、現場が回っている" : "配置に余裕がなく、現場が回らない");
   add("sat", hoursPen.satT, "家族対応・苦情処理に手が回らなかった");
 
   // 定着度の要因
-  add("ret", st.retT, `人員体制「${st.label}」`);
+  add("ret", stRetT, `人員体制「${st.label}」`);
   add("ret", ik.retT, `受入方針「${ik.label}」による現場の負担`);
   add("ret", decision.care === "premium" ? -2 : 0, "手厚いケアによる現場の負担");
   add("ret", retTb, "追加施策（研修など人への投資）");
@@ -1026,7 +1058,7 @@ function project(state, decision, event) {
   add("ret", hoursPen.retT, "職員面談・シフト調整に手が回らなかった");
 
   // 適正運営度の要因
-  add("comp", st.compT, `人員体制「${st.label}」`);
+  add("comp", stCompT, `人員体制「${st.label}」`);
   add("comp", ik.compT, `受入方針「${ik.label}」で記録が後回しに`);
   add("comp", ka.compT, `加算「${ka.label}」の記録・事務負担`);
   add("comp", compTb, "追加施策（記録の整備・研修）");
@@ -1035,10 +1067,12 @@ function project(state, decision, event) {
   add("comp", hoursPen.compT, "請求・記録の事務に手が回らなかった");
 
   // 目標水準への収束（＝維持しないと自然に戻る）
-  const satTarget = clamp(c.satT + ik.satT + ka.satT + satTb + (ev.satT ?? 0) + (ev.satShock ?? 0) - crowd * 8 + hoursPen.satT, 0, 100);
-  const retTarget = clamp(55 + st.retT + ik.retT + (decision.care === "premium" ? -2 : 0) + retTb
+  // 層2(配置余裕)とcrowd(過密)のsatチャネル負項は合算下限−12（三重罰防止・§2）
+  const satNeg = Math.max(Math.min(marginT, 0) + (-crowd * 8), -12);
+  const satTarget = clamp(c.satT + ik.satT + ka.satT + satTb + (ev.satT ?? 0) + (ev.satShock ?? 0) + Math.max(marginT, 0) + satNeg + hoursPen.satT, 0, 100);
+  const retTarget = clamp(55 + stRetT + ik.retT + (decision.care === "premium" ? -2 : 0) + retTb
     + (ev.retT ?? 0) + (ev.retShock ?? 0) - crowd * 5 + hoursPen.retT, 0, 100);
-  const compTarget = clamp(60 + st.compT + ik.compT + ka.compT + compTb + (ev.compT ?? 0)
+  const compTarget = clamp(60 + stCompT + ik.compT + ka.compT + compTb + (ev.compT ?? 0)
     + (understaffed ? -15 : 0) + hoursPen.compT, 0, 100);
 
   let sat = Math.round(conv(state.sat, satTarget, 0.4));
@@ -1135,7 +1169,7 @@ function project(state, decision, event) {
   // 事故リスク
   let risk = 6;
   if (state.ret < 45) risk += 16; else if (state.ret < 55) risk += 7;
-  if (staffLimited) risk += 8;
+  if (M < 1.0) risk += 8; // 配置余裕なし（必要人員を下回る体制）
   if (understaffed) risk += 12;
   if (decision.intake === "high") risk += 6;
   if (state.comp >= 70) risk -= 8;
@@ -1145,9 +1179,9 @@ function project(state, decision, event) {
   return {
     breakdown: { visits, income, basePrice, unitPrice, uplift, kasanIncome, staffTotal, fixed, variable,
       initCost, auditCost, clawback, eventCost, eventCash, fixedUp: ev.fixedUp ?? 0, expense, pl,
-      staffLimited, understaffed, reqStaff, occRate, kasanFailed, haircut,
+      hijunLimited, understaffed, reqStaff, occRate, kasanFailed, haircut, genzan,
       billingLoss, staffCostUp: ev.staffCostUp ?? 0, priceDown: ev.priceDown ?? 0,
-      avgLevel, avgLoad, effThru, demand: Math.round(demand), staffCap, bottleneck, userCount: usersNow,
+      avgLevel, avgLoad, demand: Math.round(demand), hijunCap, capDay, C, staff, nqReal, marginRate: M, marginT, bottleneck, userCount: usersNow,
       hours: { need, alloc, careH, remaining, hoursGap, ratios, delegable: need.delegable, total: H } },
     preAfter: { users, sat, ret, comp, bcp, staff: curStaff, mix: rounded },
     churn, riskPct: risk, auditNote, event, reasons,
@@ -1210,6 +1244,8 @@ function resolveMonth(state, decision, event) {
     breakdown: bd, before, after, churn: p.churn, accident, riskPct: p.riskPct, auditNote: p.auditNote,
     event, initiatives: p.initiatives, decisionLabels: p.decisionLabels, reasons: p.reasons,
     newState: { ...state, month: state.month + 1, ...after, pipeline: newPipe,
+      coreShortPrev: after.staff < CONFIG.base.coreStaff, // コア割れ翌月に減算を適用（D-3）
+      marginRate: bd.marginRate,                          // 離職確率の連動に使う（D-2）
       staffCostUp: (state.staffCostUp || 0) + (bd.staffCostUp || 0),   // 最低賃金は以後ずっと効く
       priceDown: (state.priceDown || 0) + (bd.priceDown || 0) },        // 報酬改定も以後ずっと効く
   };
@@ -1237,7 +1273,8 @@ function diagnoseIssues(log, finalState) {
 
   // ---- 集計 ----
   const avgOcc = log.reduce((a, r) => a + r.breakdown.occRate, 0) / n;
-  const bnCount = { 職員: 0, 定員: 0, 需要: 0 };
+  const avgMargin = log.reduce((a, r) => a + (r.breakdown.marginRate ?? 1.3), 0) / n;
+  const bnCount = { 受入上限: 0, 定員: 0, 需要: 0 };
   log.forEach((r) => { bnCount[r.breakdown.bottleneck] = (bnCount[r.breakdown.bottleneck] || 0) + 1; });
   const mainBn = Object.entries(bnCount).sort((a, b) => b[1] - a[1])[0][0];
 
@@ -1263,21 +1300,21 @@ function diagnoseIssues(log, finalState) {
     self.push({
       title: "稼働率が上がっていない（利用者が足りない）",
       fact: `12ヶ月の平均稼働率は${Math.round(avgOcc * 100)}%。職員には余力があるのに、来所の需要が足りていません。`,
-      action: "職員を増やしても収入は増えません。まず「頭数を集める（営業・ケアマネ回り）」のか、「単価を上げる（重度者を受け入れる）」のか、方針を決めてください。自事業所のボトルネックがどちらかを見極めることが先決です。",
+      action: "職員を増やしても収入は増えません。まず「頭数を集める（営業・ケアマネ回り）」のか、「単価を上げる（重度受入。ただし手間と配置の負荷も増える）」のか、方針を決めてください。自事業所のボトルネックがどちらかを見極めることが先決です。",
     });
   }
-  if (mainBn === "職員" && avgOcc < 0.75) {
+  if (mainBn === "受入上限" && avgOcc < 0.75) {
     self.push({
-      title: "利用者は来たいのに、受けきれていない",
-      fact: `${bnCount["職員"]}ヶ月にわたり、職員数が上限となって来所を受けきれませんでした。`,
-      action: "需要はあるのに機会損失が出ています。増員が直接収入につながる局面です。自事業所でも「断っている利用者」がいないか、確認してみてください。",
+      title: "配置が受入の天井になっていた",
+      fact: `${bnCount["受入上限"]}ヶ月にわたり、今の職員数・ケア体制で受けられる上限に当たっていました。`,
+      action: "需要はあるのに機会損失が出ています。増員か、ケア体制の見直しで受入の枠は広がります。自事業所でも「体制を理由に断っている利用者」がいないか、確認してみてください。",
     });
   }
   if (mainBn === "定員") {
     self.push({
       title: "定員がいっぱいで、これ以上受けられない",
       fact: "定員が上限となり、頭数ではもう伸ばせない状態でした。",
-      action: "この局面では「単価を上げる」しか道がありません。要介護度の高い方の受け入れや、加算の算定を検討することになります。",
+      action: "この局面では「単価を上げる」しか道がありません。重度の方の受け入れや加算の算定を検討することになります（体制の負荷が増えるため、配置の余裕とセットで）。",
     });
   }
 
@@ -1299,9 +1336,18 @@ function diagnoseIssues(log, finalState) {
   // 人員配置基準
   if (understaffMonths > 0) {
     self.push({
-      title: "人員配置基準を満たせていない月があった",
-      fact: `${understaffMonths}ヶ月にわたり、利用者数に対して職員が不足していました。`,
-      action: "基準を割ると加算が算定できないだけでなく、運営そのものが問われます。利用者数と必要職員数の関係を、常に把握できる状態にしてください。",
+      title: "人員基準欠如（コア職員割れ）が起きた",
+      fact: `${understaffMonths}ヶ月にわたりコア職員（5名）を割り、翌月の基本報酬が減算されました。`,
+      action: "人員基準の欠如は基本報酬の減算に直結し、運営そのものが問われます。離職が出ても翌月に立て直せる採用・定着の備えを持ってください。",
+    });
+  }
+
+  // 配置の余裕
+  if (avgMargin < 1.05) {
+    self.push({
+      title: "配置の余裕がない経営が続いた",
+      fact: `12ヶ月平均の配置余裕は${Math.round(avgMargin * 100)}%。必要人員ぎりぎりの体制が常態化していました。`,
+      action: "基準を満たしていても、余裕のない配置は満足度と定着をじわじわ削り、離職リスクも高めます。体制の負荷（ケア・受入層・加算）と人員のバランスを見直してください。",
     });
   }
 
@@ -1439,7 +1485,7 @@ function advisorComment(month, s, bd, mix) {
 
   // ② 健全ゾーン：次に伸ばせる余地を集め、month % 候補数 で月替わりに助言する。
   const growth = [];
-  if (bd.occRate < 0.72)                             growth.push(ADVISOR_LINES.growthOcc);
+  if (bd.occRate < 0.72 && bd.hijunCap > bd.visits + 22) growth.push(ADVISOR_LINES.growthOcc);
   if ((bd.uplift || 0) < CONFIG.kasan.active.uplift) growth.push(ADVISOR_LINES.growthKasan);
   if (s.bcp < 55)                                    growth.push(ADVISOR_LINES.growthBcp);
   if (s.ret < 62)                                    growth.push(ADVISOR_LINES.growthRet);
@@ -1495,7 +1541,7 @@ function startGame(mode) {
     users: LEVELS.reduce((a, L) => a + (B.initMix[L.key] || 0), 0),
     ret: B.initRet, comp: B.initComp, bcp: B.initBcp,
     pipeline: [B.receivableSeed, B.receivableSeed],
-    staffCostUp: 0, priceDown: 0, policy: null,
+    staffCostUp: 0, priceDown: 0, policy: null, coreShortPrev: false, marginRate: 1.3,
   };
   s0.card = drawCard(s0, 1, months);
   App.state = s0;
@@ -1638,12 +1684,13 @@ function meter(label, value, max, color, suffix = "") {
   </div>`;
 }
 
-function segmented(groupLabel, group, options, cfg, current) {
+function segmented(groupLabel, group, options, cfg, current, disabledKeys = []) {
   return `<div class="lever">
     <div class="lever-head">${groupLabel}</div>
-    <div class="seg">${options.map((k) =>
-      `<button class="seg-btn${current === k ? " active" : ""}" data-act="lever" data-group="${group}" data-val="${k}">${cfg[k].label}</button>`
-    ).join("")}</div>
+    <div class="seg">${options.map((k) => {
+      const dis = disabledKeys.includes(k);
+      return `<button class="seg-btn${current === k ? " active" : ""}${dis ? " disabled" : ""}"${dis ? " disabled" : ` data-act="lever" data-group="${group}" data-val="${k}"`}>${cfg[k].label}</button>`;
+    }).join("")}</div>
     <div class="lever-hint">${esc(cfg[current].hint)}</div>
   </div>`;
 }
@@ -1655,12 +1702,12 @@ function viewDecide() {
   const bd = proj.breakdown, h = bd.hours;
 
   const warns = [];
-  if (bd.understaffed) warns.push(`人員配置基準を満たしていません（必要 約${bd.reqStaff}名）。加算は算定できず、適正運営度が下がります。`);
+  if (bd.understaffed) warns.push("人員基準欠如（コア職員を割っています）。翌月から基本報酬が減算され、加算も算定できません。増員で解消を。");
+  if (s.coreShortPrev) warns.push("⚠ 人員基準欠如の減算適用中（基本報酬×70%）。解消の翌月まで続きます。");
   if (s.ret < 45) warns.push("職員の定着度が危険水域です。離職の連鎖が起きる前に手を打つ判断を。");
   if (s.comp < 50) warns.push("適正運営度が低下しています。実地指導での返還や加算の減額につながります。");
   if (bd.kasanFailed && !bd.understaffed) {
     const ka = CONFIG.kasan[d.kasan], why = [];
-    if (s.staff < ka.reqStaff) why.push(`職員${ka.reqStaff}名以上（現在${s.staff}名）`);
     if (s.ret < ka.reqRet) why.push(`定着度${ka.reqRet}以上（現在${Math.round(s.ret)}）`);
     warns.push(`加算が算定できません。要件：${why.join("・")}。単価の上乗せがゼロになります。`);
   }
@@ -1774,15 +1821,15 @@ function viewDecide() {
         </div>
         <div class="mix-calc">
           <div class="mc"><span class="mc-l">平均単価</span><span class="mc-v">${yen(Math.round(mi.avgPrice))}</span></div>
-          <div class="mc"><span class="mc-l">職員1人が回せる回数</span><span class="mc-v">${bd.effThru}回</span></div>
+          <div class="mc"><span class="mc-l">受入上限（当月予測）</span><span class="mc-v">${bd.hijunCap}回</span></div>
           <div class="mc"><span class="mc-l">来所の需要（当月予測）</span><span class="mc-v">${bd.demand}回</span></div>
-          <div class="mc"><span class="mc-l">職員の処理上限（当月予測）</span><span class="mc-v">${Math.round(bd.staffCap)}回</span></div>
+          <div class="mc"><span class="mc-l">必要人員（見込み）</span><span class="mc-v">約${bd.reqStaff}名</span></div>
         </div>
-        <div class="mix-bn bn-${bn === "職員" ? "staff" : bn === "定員" ? "cap" : "demand"}">
+        <div class="mix-bn bn-${bn === "受入上限" ? "staff" : bn === "定員" ? "cap" : "demand"}">
           いま収入を抑えているのは <b>${bn}</b> です。
-          ${bn === "職員" ? "利用者は来たいのに、職員が足りず受けきれていません。増員すれば収入が伸びます。"
-            : bn === "定員" ? "定員いっぱいです。これ以上は受けられません。単価を上げる（重度を受ける）しかありません。"
-            : "職員には余力がありますが、来所の需要が足りません。増員しても収入は増えず、人件費だけが増えます。"}
+          ${bn === "受入上限" ? "今の職員数・ケア体制で受けられる上限に当たっています。増員か、体制の見直しで枠が広がります。"
+            : bn === "定員" ? "定員いっぱいです。定員が受け入れの絶対の天井です。"
+            : "受入の枠には余裕がありますが、来所の需要が足りません。営業・ケアマネ連携が打ち手です。"}
         </div>
       </div>`;
     })()}
@@ -1791,8 +1838,8 @@ function viewDecide() {
       ${segmented("① 受入方針（稼働率をどこまで追うか）", "intake", ["low", "mid", "high"], CONFIG.intake, d.intake)}
       ${segmented("② 受入層（どの要介護度を受けるか＝単価を決める）", "admission", ["light", "mixed", "heavy"], CONFIG.admission, d.admission)}
       ${segmented("③ ケアの手厚さ（満足度と手間に効く）", "care", ["basic", "standard", "premium"], CONFIG.care, d.care)}
-      ${segmented("④ 人員体制（＝人件費）", "staffing", ["cut", "keep", "hire"], CONFIG.staffing, d.staffing)}
-      ${segmented("⑤ 加算・機能訓練体制（＝単価の上乗せ）", "kasan", ["none", "standard", "active"], CONFIG.kasan, d.kasan)}
+      ${segmented("④ 人員体制（＝人件費）", "staffing", ["cut", "keep", "hire"], CONFIG.staffing, d.staffing, s.staff <= B.coreStaff ? ["cut"] : [])}
+      ${segmented("⑤ 加算体制（＝単価の上乗せ）", "kasan", ["none", "standard", "active"], CONFIG.kasan, d.kasan)}
     </div>
 
     <div class="initiatives">
@@ -1911,32 +1958,35 @@ function whyBlock(label, key, r, meaning, suffix = "") {
 }
 
 /* 「来所回数の決まり方」ブロック（結果画面）。
-   来所回数 = min(需要, 職員上限, 定員) という経営構造そのものを見せる。
+   来所回数 = min(需要, 定員, 受入上限[配置]) という経営構造そのものを見せる。
    3値・visits・稼働率はすべて既存の計算結果(breakdown)をそのまま参照し、再計算しない。
    強調（▼）はエンジン内部の判定(bd.bottleneck)に統一する。表示側で独自の
    優先順位を持たない（ソースオブトゥルースはエンジン一本）。 */
 function bottleneckBlock(bd) {
   const cards = [
     { key: "cap",    label: "定員",     v: CAP },
-    { key: "staff",  label: "職員上限", v: Math.round(bd.staffCap) },
+    { key: "staff",  label: "受入上限（配置）", v: bd.hijunCap },
     { key: "demand", label: "需要",     v: bd.demand },
   ];
-  const bnKey = bd.bottleneck === "定員" ? "cap" : bd.bottleneck === "職員" ? "staff" : "demand";
+  const bnKey = bd.bottleneck === "定員" ? "cap" : bd.bottleneck === "受入上限" ? "staff" : "demand";
   const bn = cards.find((c) => c.key === bnKey);
   const note = bn.key === "demand"
     ? "ボトルネック: 需要。利用希望が伸び悩んでいます。営業・ケアマネ連携が打ち手です。"
     : bn.key === "staff"
-      ? "ボトルネック: 職員。需要はあるのに受けきれず断っています（機会損失）。増員の検討を。"
+      ? "ボトルネック: 配置。今の職員数・ケア体制で受けられる上限です。増員か、体制の見直しで広がります。"
       : "ボトルネック: 定員。満床です。稼働100%は「これ以上受けられない」サインでもあります。";
   return `<div class="bnk">
-    <div class="bnk-cap">来所回数の決まり方　<small>需要・職員上限・定員の一番小さいところで止まる</small></div>
+    <div class="bnk-cap">来所回数の決まり方　<small>需要・定員・受入上限（配置）の一番小さいところで止まる</small></div>
     <div class="bnk-cards">
       ${cards.map((c) => `<div class="bnk-card${c.key === bn.key ? " min" : ""}">
         <span class="bnk-l">${c.key === bn.key ? "▼ " : ""}${c.label}</span>
         <span class="bnk-v">${c.v}回</span>
       </div>`).join("")}
     </div>
-    <div class="bnk-occ">稼働率 <b>${Math.round(bd.occRate * 100)}%</b>＝延べ ${bd.visits}回 ÷ 定員 ${CAP}回</div>
+    <div class="bnk-occ">稼働率 <b>${Math.round(bd.occRate * 100)}%</b>＝延べ ${bd.visits}回 ÷ 定員 ${CAP}回
+      <span class="margin-badge ${bd.understaffed ? "margin-bad" : bd.marginRate < 1.05 ? "margin-warn" : "margin-ok"}">
+        ${bd.understaffed ? "⚠人員基準欠如" : `配置余裕 ${Math.round(bd.marginRate * 100)}%`}（必要${bd.nqReal.toFixed(1)}名/現在${bd.staff}名）
+      </span></div>
     <div class="bnk-note bn-${bn.key}">${note}</div>
   </div>`;
 }
@@ -1969,13 +2019,14 @@ function viewResult() {
       <div class="bd-col">
         <div class="bd-col-title income-t">収入の内訳</div>
         ${row("延べ利用回数", `${bd.visits} 回`)}
+        ${bd.genzan > 0 ? row("人員基準欠如減算（基本報酬×70%）", `− ${yen(bd.genzan)}`) : ""}
         ${row("平均単価（要介護度 " + bd.avgLevel.toFixed(2) + "）", `× ${yen(bd.basePrice)}`)}
         ${bd.uplift > 0 ? row("加算単価", `+ ${yen(bd.uplift)}`) : ""}
         ${bd.billingLoss > 0 ? row("請求ミスによる返戻", `− ${yen(bd.billingLoss)}`) : ""}
         ${bd.eventCash > 0 ? row("臨時収入（補助金等）", yen(bd.eventCash)) : ""}
         ${bd.kasanFailed ? `<div class="bd-note">※ 加算の体制・人員要件を満たさず算定できませんでした。</div>` : ""}
         ${bd.haircut ? `<div class="bd-note">※ 適正運営度が低く加算が減額されました。</div>` : ""}
-        ${bd.staffLimited ? `<div class="bd-note">※ 職員数が上限。回しきれず機会損失が出ています。</div>` : ""}
+        ${bd.hijunLimited ? `<div class="bd-note">※ 受入上限（配置）に到達。受けきれなかった需要は機会損失です。</div>` : ""}
       </div>
       <div class="bd-col">
         <div class="bd-col-title expense-t">支出の内訳</div>
