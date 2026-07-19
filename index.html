@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.7.1-2026-07-19">
+<meta name="version" content="v4.7.2-2026-07-19">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -435,8 +435,6 @@
 .bnk-note.bn-staff,.bnk-note.bn-demand{background:#fbf1ec;}
 @media (max-width:480px){.bnk-cards{flex-direction:column;}}
 .seg-btn.disabled{opacity:.35;cursor:not-allowed;}
-.margin-badge{display:inline-block;font-size:11.5px;font-weight:700;border-radius:8px;padding:3px 9px;margin-left:8px;}
-.margin-ok{background:#eef7f2;color:#2f8f6b;}.margin-warn{background:#fdf3e4;color:#b06a12;}.margin-bad{background:#fbeee9;color:#c15334;}
 html{margin:0;padding:0;}
 body{padding:24px 16px;margin:0;}
 .frame{max-width:640px;margin:0 auto;}
@@ -542,7 +540,7 @@ const CONFIG = {
   },
   // ⑤ 追加施策（任意・複数選択可）
   initiatives: {
-    sales: { key: "sales", label: "営業強化", cost: 120_000, users: 6, hint: "新規利用者↑↑（−¥120,000）／稼働の余力がなければ活きない" },
+    sales: { key: "sales", label: "営業強化", cost: 120_000, users: 4, hint: "新規利用者↑↑（−¥120,000）／稼働の余力がなければ活きない" },
     spotrec: { key: "spotrec", label: "スポットレク", cost: 50_000, satBoost: 10, occBoost: 0.04, hint: "満足度↑・当月の来所↑（−¥50,000）／効果は定着度で変わる" },
     training: { key: "training", label: "職員研修", cost: 80_000, retBoost: 10, satBoost: 4, compBoost: 4, occMult: 0.97, hint: "定着↑・満足度↑・記録↑（−¥80,000）／当月は現場が薄く稼働微減" },
     records: { key: "records", label: "記録・書類の整備", cost: 40_000, compBoost: 12, hint: "適正運営度↑（−¥40,000）／実地指導・加算算定への備え" },
@@ -760,7 +758,8 @@ function drawCard(state, month, totalMonths) {
 
 const CAP = CONFIG.base.teiin * CONFIG.base.operatingDays; // 定員回数/月
 const OCC_NEAR_FULL = 0.90;
-const SALES_FULL_OCC = 0.97, SALES_DECAY_SPAN = 0.35, SALES_MIN_MULT = 0.15; // 営業逓減（v4.7.1） // 需要▼でもこの稼働率以上なら「ほぼ利用枠いっぱい」文言に切替（v4.7.1）
+const SALES_FULL_OCC = 0.97, SALES_DECAY_SPAN = 0.62, SALES_MIN_MULT = 0.10; // 営業逓減（v4.7.2で減速）
+const REP_CONV = 0.20, REP_TO_USERS = 0.35; // 評判の遅効収束と登録者への係数（v4.7.2） // 営業逓減（v4.7.1） // 需要▼でもこの稼働率以上なら「ほぼ利用枠いっぱい」文言に切替（v4.7.1）
 
 /* ========================= 要介護度別の利用者構成 =========================
    デイの単価は要介護度で大きく変わる。重度者ほど単価は高いが、手間もかかり、
@@ -1129,7 +1128,15 @@ function project(state, decision, event) {
   reconcile("comp", state.comp, comp);
   // --- 利用者数の増減（構成に反映される） ---
   const usersNow = mixInfo.total;
-  const usersTarget = clamp(33 + (sat - 55) * 1.0 + hoursPen.usersT, B.usersMin, B.usersMax);
+  // 評判: 満足度・地域接点施策(レク)・配置/ケア水準から合成し、遅効で収束する内部値。
+  // 需要の中期トレンドは「時間」ではなく評判=打ち手の総合で動く（v4.7.2設計原則）。
+  const repTarget = clamp((sat - 55) * 0.8
+    + (inits.includes("spotrec") ? 10 : 0)
+    + (inits.includes("sales") ? 24 : 0)
+    + (decision.care === "premium" ? 6 : decision.care === "basic" ? -6 : 0)
+    + (M >= 1.15 ? 4 : M < 1.0 ? -6 : 0), -25, 30);
+  const rep = (state.rep ?? 8) + REP_CONV * (repTarget - (state.rep ?? 8));
+  const usersTarget = clamp(37 + rep * REP_TO_USERS + hoursPen.usersT, B.usersMin, B.usersMax);
   // 営業・紹介の効きは前月稼働率で逓減（空きが少ないほど紹介は入らない・v4.7.1）
   const gainMult = clamp((SALES_FULL_OCC - (state.prevOcc ?? 0.65)) / SALES_DECAY_SPAN, SALES_MIN_MULT, 1.0);
   const effSales = salesUsers > 0 ? Math.max(1, Math.round(salesUsers * gainMult)) : 0;
@@ -1188,7 +1195,7 @@ function project(state, decision, event) {
       initCost, auditCost, clawback, eventCost, eventCash, fixedUp: ev.fixedUp ?? 0, expense, pl,
       hijunLimited, understaffed, reqStaff, occRate, kasanFailed, haircut, genzan,
       billingLoss, staffCostUp: ev.staffCostUp ?? 0, priceDown: ev.priceDown ?? 0,
-      avgLevel, avgLoad, demand: Math.round(demand), hijunCap, capDay, C, staff, nqReal, marginRate: M, marginT, bottleneck, userCount: usersNow,
+      avgLevel, avgLoad, demand: Math.round(demand), hijunCap, capDay, C, staff, nqReal, marginRate: M, marginT, rep, bottleneck, userCount: usersNow,
       hours: { need, alloc, careH, remaining, hoursGap, ratios, delegable: need.delegable, total: H } },
     preAfter: { users, sat, ret, comp, bcp, staff: curStaff, mix: rounded },
     churn, riskPct: risk, auditNote, event, reasons,
@@ -1253,6 +1260,7 @@ function resolveMonth(state, decision, event) {
     newState: { ...state, month: state.month + 1, ...after, pipeline: newPipe,
       coreShortPrev: after.staff < CONFIG.base.coreStaff, // コア割れ翌月に減算を適用（D-3）
       prevOcc: bd.occRate,                                 // 営業逓減の基準（v4.7.1）
+      rep: bd.rep,                                         // 評判（遅効・v4.7.2）
       marginRate: bd.marginRate,                          // 離職確率の連動に使う（D-2）
       staffCostUp: (state.staffCostUp || 0) + (bd.staffCostUp || 0),   // 最低賃金は以後ずっと効く
       priceDown: (state.priceDown || 0) + (bd.priceDown || 0) },        // 報酬改定も以後ずっと効く
@@ -1354,7 +1362,7 @@ function diagnoseIssues(log, finalState) {
   if (avgMargin < 1.05) {
     self.push({
       title: "配置の余裕がない経営が続いた",
-      fact: `12ヶ月平均の配置余裕は${Math.round(avgMargin * 100)}%。必要人員ぎりぎりの体制が常態化していました。`,
+      fact: `12ヶ月を通して、体制に余裕のない月が続きました（基準ぎりぎりの配置が常態化）。`,
       action: "基準を満たしていても、余裕のない配置は満足度と定着をじわじわ削り、離職リスクも高めます。体制の負荷（ケア・受入層・加算）と人員のバランスを見直してください。",
     });
   }
@@ -1560,7 +1568,7 @@ function startGame(mode) {
     users: LEVELS.reduce((a, L) => a + (B.initMix[L.key] || 0), 0),
     ret: B.initRet, comp: B.initComp, bcp: B.initBcp,
     pipeline: [B.receivableSeed, B.receivableSeed],
-    staffCostUp: 0, priceDown: 0, policy: null, coreShortPrev: false, marginRate: 1.3, prevOcc: 0.65,
+    staffCostUp: 0, priceDown: 0, policy: null, coreShortPrev: false, marginRate: 1.3, prevOcc: 0.65, rep: 8,
   };
   s0.card = drawCard(s0, 1, months);
   App.state = s0;
@@ -1841,7 +1849,6 @@ function viewDecide() {
         <div class="mix-calc">
           <div class="mc"><span class="mc-l">平均単価</span><span class="mc-v">${yen(Math.round(mi.avgPrice))}</span></div>
           <div class="mc"><span class="mc-l">来所の需要（当月予測）</span><span class="mc-v">${bd.demand}回</span></div>
-          <div class="mc"><span class="mc-l">必要人員（見込み）</span><span class="mc-v">約${bd.reqStaff}名</span></div>
         </div>
         <div class="mix-bn bn-${bn === "受入上限" ? "staff" : bn === "定員" ? "cap" : "demand"}">
           いま収入を抑えているのは <b>${bn}</b> です。
@@ -2005,10 +2012,7 @@ function bottleneckBlock(bd) {
         <span class="bnk-v">${c.v}回</span>
       </div>`).join("")}
     </div>
-    <div class="bnk-occ">稼働率 <b>${Math.round(bd.occRate * 100)}%</b>＝延べ ${bd.visits}回 ÷ 定員 ${CAP}回
-      <span class="margin-badge ${bd.understaffed ? "margin-bad" : bd.marginRate < 1.05 ? "margin-warn" : "margin-ok"}">
-        ${bd.understaffed ? "⚠人員基準欠如" : `配置余裕 ${Math.round(bd.marginRate * 100)}%`}（必要${bd.nqReal.toFixed(1)}名/現在${bd.staff}名）
-      </span></div>
+    <div class="bnk-occ">稼働率 <b>${Math.round(bd.occRate * 100)}%</b>＝延べ ${bd.visits}回 ÷ 定員 ${CAP}回</div>
     <div class="bnk-note bn-${isHijun ? "staff" : bnKey}">${note}</div>
   </div>`;
 }
