@@ -490,8 +490,8 @@ const CONFIG = {
     // 非正規P＝staff−5（人件費・最低賃金の対象）。介護換算数C＝介護正規2＋P＝staff−3。
     coreStaff: 5, coreWage: 1_400_000, partWage: 190_000, employerBurden: 1.15,
     // 経費は「収入×経費率」で構造化（実額固定をやめ、収入変動でも経費率が安定）
-    adminExpenseRate: 0.18, // 事務費＝収入の18%（家賃・光熱・通信・減価償却）
-    serviceExpenseRate: 0.07, // 事業費＝収入の7%（食材・消耗品）→ 合計経費率25%
+    adminExpenseRate: 0.07, // 事務費＝収入の7%（家賃・通信・減価償却など運営管理）
+    serviceExpenseRate: 0.18, // 事業費＝収入の18%（食材・水道光熱・消耗品・送迎燃料などサービス直接）→ 合計経費率25%
     teiin: 25, operatingDays: 22, // 定員 × 稼働日 = 月間定員回数
     usersMin: 20, usersMax: 60, staffMin: 2, staffMax: 14, retBomb: 40,
     receivableSeed: 3_400_000, // 開始時の売掛（過去2ヶ月分の報酬）
@@ -759,7 +759,9 @@ function drawCard(state, month, totalMonths) {
 const CAP = CONFIG.base.teiin * CONFIG.base.operatingDays; // 定員回数/月
 const OCC_NEAR_FULL = 0.90;
 const SALES_FULL_OCC = 0.97, SALES_DECAY_SPAN = 0.62, SALES_MIN_MULT = 0.10; // 営業逓減（v4.7.2で減速）
-const REP_CONV = 0.20, REP_TO_USERS = 0.35; // 評判の遅効収束と登録者への係数（v4.7.2） // 営業逓減（v4.7.1） // 需要▼でもこの稼働率以上なら「ほぼ利用枠いっぱい」文言に切替（v4.7.1）
+const REP_CONV = 0.20, REP_TO_USERS = 0.35; // 評判の遅効収束と登録者への係数（v4.7.2）
+// 月次平滑（登録制＝来所は緩やかにしか増減しない・v4.7.2修正3）
+const SMOOTH_UP = 27, SMOOTH_DOWN = 27, SMOOTH_DOWN_EVENT = 55; // 回/月（≈+5pt/−5pt/−10pt） // 営業逓減（v4.7.1） // 需要▼でもこの稼働率以上なら「ほぼ利用枠いっぱい」文言に切替（v4.7.1）
 
 /* ========================= 要介護度別の利用者構成 =========================
    デイの単価は要介護度で大きく変わる。重度者ほど単価は高いが、手間もかかり、
@@ -945,7 +947,15 @@ function project(state, decision, event) {
   const demand = mixInfo.demand * satAdj * occMult * ik.factor; // 受入方針で受入の間口を絞る/広げる
 
   // 来所回数＝min(需要, 定員, 受入上限)。職員数は処理能力ではなく配置基準経由で効く。
-  const visits = Math.max(0, Math.floor(Math.min(demand, CAP, hijunCap)));
+  const rawVisits = Math.max(0, Math.floor(Math.min(demand, CAP, hijunCap)));
+  // 月次平滑（v4.7.2修正3）: 登録制のデイでは来所は緩やかにしか増減しない。
+  // 通常月は前月比±27回(≈5pt)、需要を下げるイベント月のみ−55回(≈10pt)まで許容。
+  // 定員・受入上限の構造制約は平滑より優先（下限が構造上限を超えないようminを再適用）。
+  const prevV = Math.round((state.prevOcc ?? 0.65) * CAP);
+  const isDownEvent = !!(ev && (((ev.occMult ?? 1) < 1) || ((ev.users ?? 0) < 0) || ev.type === "disaster"));
+  const visits = Math.max(0, Math.min(
+    clamp(rawVisits, Math.max(0, prevV - (isDownEvent ? SMOOTH_DOWN_EVENT : SMOOTH_DOWN)), prevV + SMOOTH_UP),
+    CAP, hijunCap));
   // タイは 受入上限 > 定員 > 需要 の順（配置はプレイヤーの選択の結果＝行動可能情報を優先）
   const hijunLimited = hijunCap <= Math.min(demand, CAP);
   const capLimited = !hijunLimited && CAP <= Math.min(demand, hijunCap);
@@ -1015,14 +1025,14 @@ function project(state, decision, event) {
   income -= billingLoss;
   // 支出（カードによる事務費高騰・臨時コストを含む）
   // 経費は「収入×経費率」で計算（事務費18%＋事業費7%＝経費率25%を構造的に保つ）
-  const fixed = Math.round(income * B.adminExpenseRate) + (ev.fixedUp ?? 0); // 事務費
+  const fixed = Math.round(income * B.adminExpenseRate); // 事務費
   const eventCost = ev.cost ?? 0;
   const eventCash = ev.cash ?? 0; // 補助金などの臨時収入
   // 人件費：コア5名(140万)＋非正規(staff−5名)×事業主負担1.15。
   // コア割れ月は欠員職種の実単価を控除（欠員は非正規→介護正規25万×2→看護30万の順）
   const coreDeduct = staff >= 5 ? 0 : staff === 4 ? 250_000 : staff === 3 ? 500_000 : 800_000;
   const staffTotal = Math.round((B.coreWage - coreDeduct + Math.max(0, staff - B.coreStaff) * (B.partWage + (state.staffCostUp || 0))) * B.employerBurden);
-  const variable = Math.round(income * B.serviceExpenseRate); // 事業費
+  const variable = Math.round(income * B.serviceExpenseRate) + (ev.fixedUp ?? 0); // 事業費（光熱費・食材費の高騰イベントはこちらに乗る）
   let auditCost = 0, clawback = 0, auditNote = null;
   if (ev.audit) {
     if (state.comp >= 60) { auditCost = 150_000; auditNote = "記録が整っており大過なし。通常対応で完了。"; }
@@ -1097,8 +1107,10 @@ function project(state, decision, event) {
       return;
     }
     const rawSum = list.reduce((a, r) => a + r.v, 0);
-    if (rawSum === 0) {
-      // 寄与の総和がゼロ。実変化があれば「基準へ自然に戻る力」で説明する
+    // 寄与の総和がゼロ、または実変化と符号が食い違う（収束・クランプが支配した月）は
+    // 比例配分できない——縮尺率が負になり各項の符号が文言と逆転するため（v4.7.2バグ修正）。
+    // この場合は「基準へ戻る力」の合成1行で説明する。
+    if (rawSum === 0 || Math.sign(rawSum) !== Math.sign(actualDelta)) {
       if (actualDelta === 0) { reasons[key] = []; }
       else {
         const drift = actualDelta > 0 ? "特に手を打たず、基準値へ自然に戻った" : "維持する手を打たず、基準値へ下がった";
@@ -1116,12 +1128,17 @@ function project(state, decision, event) {
     let i = 0;
     while (diff !== 0 && i < order.length * 4) {
       const step = diff > 0 ? 1 : -1;
-      order[i % order.length].v += step;
-      diff -= step;
+      const f = order[i % order.length];
+      // 文言と符号の逆転を防ぐ: 元の寄与と逆向きになる調整は配らない（v4.7.2修正5）
+      const nv = f.v + step;
+      if (nv === 0 || Math.sign(nv) === f.sign) { f.v = nv; diff -= step; }
       i += 1;
     }
     // 0になった項目は表示から落とす（0の理由を並べても意味がない）
-    reasons[key] = floors.filter((f) => f.v !== 0).map((f) => ({ v: f.v, text: f.text }));
+    const out = floors.filter((f) => f.v !== 0).map((f) => ({ v: f.v, text: f.text }));
+    // 符号を守ると配りきれない端数は「基準へ戻る力」の行として計上（合計＝実変化を維持）
+    if (diff !== 0) out.push({ v: diff, text: diff > 0 ? "特に手を打たず、基準値へ自然に戻った" : "維持する手を打たず、基準値へ下がった" });
+    reasons[key] = out;
   };
   reconcile("sat", state.sat, sat);
   reconcile("ret", state.ret, ret);
@@ -1486,7 +1503,7 @@ const ADVISOR_LINES = {
   genzanAlert: "所長、人員基準を欠いています。基本報酬が減算され、加算も止まっています。何よりまず、人の確保です。採用に動きましょう。",
   // 全方位盤石／終盤
   good:  "所長、いい経営をされています。利用者さんにも職員にも、ちゃんと向き合えている。この調子でいきましょう。……私が言うことも、なくなってきましたね。",
-  final: "所長、この1年、本当にお疲れさまでした。うまくいったことも、そうでないことも、全部これからの糧になります。このあと、1年の通期決算が出ます。数字だけでなく、「何を大事にしてきたか」も、一緒に振り返りましょう。",
+  final: "所長、この1年、本当にお疲れさまでした。うまくいったことも、そうでないことも、全部これからの糧になります。このあと、1年の通期の収支が出ます。数字だけでなく、「何を大事にしてきたか」も、一緒に振り返りましょう。",
 };
 
 /* 状態から相談員のひとことを選ぶ。読むだけ・戻り値は {tone, text}。
@@ -2025,7 +2042,7 @@ function viewResult() {
 
   return `<div class="frame">
     <div class="result-head">
-      <span class="result-month">第${s.month}月 の決算　稼働率 ${Math.round(bd.occRate * 100)}%</span>
+      <span class="result-month">第${s.month}月 の収支状況　稼働率 ${Math.round(bd.occRate * 100)}%</span>
       <span class="result-verdict ${profit ? "profit" : "loss"}">${profit ? "黒字" : "赤字"} ${signYen(bd.pl)}</span>
     </div>
 
@@ -2058,8 +2075,8 @@ function viewResult() {
         <div class="bd-col-title expense-t">支出の内訳</div>
         ${row("人件費", yen(bd.staffTotal))}
         ${row("事務費", yen(bd.fixed))}
-        ${bd.fixedUp > 0 ? `<div class="bd-note">※ 光熱費・通信費の高騰で事務費が増えています。</div>` : ""}
         ${row("事業費", yen(bd.variable))}
+        ${bd.fixedUp > 0 ? `<div class="bd-note">※ 光熱費・食材費の高騰で事業費が増えています。</div>` : ""}
         ${bd.initCost > 0 ? row("取組費用（営業・研修等）", yen(bd.initCost)) : ""}
         ${bd.auditCost > 0 ? row("実地指導対応", yen(bd.auditCost)) : ""}
         ${bd.clawback > 0 ? row("加算返還", yen(bd.clawback)) : ""}
@@ -2110,7 +2127,7 @@ function viewResult() {
       ${r.churn ? `<div class="churn">💥 定着度の低下で職員が1名離職しました。負担がさらに残る職員に集中します。</div>` : ""}
     </div>
 
-    <button class="cta" data-act="next">${r.newState.month > App.totalMonths ? "通期の決算を見る →" : `第${r.newState.month}月へ進む →`}</button>
+    <button class="cta" data-act="next">${r.newState.month > App.totalMonths ? "通期の収支状況を見る →" : `第${r.newState.month}月へ進む →`}</button>
   </div>`;
 }
 
@@ -2136,7 +2153,7 @@ function viewEnd() {
   const rotting = totalPl >= 0 && issues.some((i) => i.level === "bad");
 
   return `<div class="frame"><div class="end">
-    <div class="eyebrow">${App.mode === "exec" ? "詳細コース｜経営の課題分析" : "標準コース｜経営の基本"}　${App.totalMonths}ヶ月の通期決算</div>
+    <div class="eyebrow">${App.mode === "exec" ? "詳細コース｜経営の課題分析" : "標準コース｜経営の基本"}　${App.totalMonths}ヶ月の通期収支</div>
     <div class="end-tier ${cls}">${tier}</div>
     <div class="end-figures">
       <div class="end-fig"><div class="end-fig-label">通期損益（発生ベース）</div>
