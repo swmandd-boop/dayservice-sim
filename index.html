@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.7.2-2026-07-19">
+<meta name="version" content="v4.7.3-2026-07-20">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -944,18 +944,18 @@ function project(state, decision, event) {
   // 需要：構成ごとの来所頻度が土台。満足度が低いと足が遠のく
   const satAdj = clamp(0.71 + (state.sat / 100) * 0.50, 0.6, 1.20);
   const occMult = (ev.occMult ?? 1) * occMultI;
-  const demand = mixInfo.demand * satAdj * occMult * ik.factor; // 受入方針で受入の間口を絞る/広げる
-
-  // 来所回数＝min(需要, 定員, 受入上限)。職員数は処理能力ではなく配置基準経由で効く。
-  const rawVisits = Math.max(0, Math.floor(Math.min(demand, CAP, hijunCap)));
-  // 月次平滑（v4.7.2修正3）: 登録制のデイでは来所は緩やかにしか増減しない。
-  // 通常月は前月比±27回(≈5pt)、需要を下げるイベント月のみ−55回(≈10pt)まで許容。
-  // 定員・受入上限の構造制約は平滑より優先（下限が構造上限を超えないようminを再適用）。
+  const rawDemand = mixInfo.demand * satAdj * occMult * ik.factor; // 受入方針で受入の間口を絞る/広げる
+  // 月次平滑（v4.7.2修正3→v4.7.3で需要形成側へ移設）: 登録制のデイでは利用は紹介・調整を
+  // 経て緩やかにしか増減しない。通常月は前月比±27回(≈5pt)、需要を下げるイベント月のみ
+  // −55回(≈10pt)まで許容。needカード・稼働率式・収入はすべてこのdemandを参照する
+  // （単一ソース原則・v4.7.3）。minの前に平滑するため来所系列はv4.7.2と同値。
   const prevV = Math.round((state.prevOcc ?? 0.65) * CAP);
   const isDownEvent = !!(ev && (((ev.occMult ?? 1) < 1) || ((ev.users ?? 0) < 0) || ev.type === "disaster"));
-  const visits = Math.max(0, Math.min(
-    clamp(rawVisits, Math.max(0, prevV - (isDownEvent ? SMOOTH_DOWN_EVENT : SMOOTH_DOWN)), prevV + SMOOTH_UP),
-    CAP, hijunCap));
+  const demand = Math.max(0, clamp(Math.floor(rawDemand),
+    Math.max(0, prevV - (isDownEvent ? SMOOTH_DOWN_EVENT : SMOOTH_DOWN)), prevV + SMOOTH_UP));
+
+  // 来所回数＝min(需要, 定員, 受入上限)。職員数は処理能力ではなく配置基準経由で効く。
+  const visits = Math.max(0, Math.min(demand, CAP, hijunCap));
   // タイは 受入上限 > 定員 > 需要 の順（配置はプレイヤーの選択の結果＝行動可能情報を優先）
   const hijunLimited = hijunCap <= Math.min(demand, CAP);
   const capLimited = !hijunLimited && CAP <= Math.min(demand, hijunCap);
@@ -1212,7 +1212,7 @@ function project(state, decision, event) {
       initCost, auditCost, clawback, eventCost, eventCash, fixedUp: ev.fixedUp ?? 0, expense, pl,
       hijunLimited, understaffed, reqStaff, occRate, kasanFailed, haircut, genzan,
       billingLoss, staffCostUp: ev.staffCostUp ?? 0, priceDown: ev.priceDown ?? 0,
-      avgLevel, avgLoad, demand: Math.round(demand), hijunCap, capDay, C, staff, nqReal, marginRate: M, marginT, rep, bottleneck, userCount: usersNow,
+      avgLevel, avgLoad, demand, hijunCap, capDay, C, staff, nqReal, marginRate: M, marginT, rep, bottleneck, userCount: usersNow,
       hours: { need, alloc, careH, remaining, hoursGap, ratios, delegable: need.delegable, total: H } },
     preAfter: { users, sat, ret, comp, bcp, staff: curStaff, mix: rounded },
     churn, riskPct: risk, auditNote, event, reasons,
