@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.13.0-2026-07-23">
+<meta name="version" content="v4.14.0-2026-07-23">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -45,6 +45,21 @@
       .phead-recv{font-size:11px;color:#9db4b0;margin-top:2px;}
       .phead-pl{font-size:12px;font-weight:700;margin-top:3px;}
 
+      .okbox{margin-top:12px;border-top:1px solid var(--line);padding-top:11px;}
+      .ok-head{font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:8px;}
+      .ok-head small{display:block;font-weight:500;font-size:11px;color:var(--muted);margin-top:2px;}
+      .ok-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:11.5px;line-height:1.6;}
+      .ok-tag{flex:none;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;color:#fff;margin-top:1px;}
+      .ok-act{background:var(--teal);}
+      .ok-luck{background:var(--amber);}
+      .ok-str{background:var(--violet);}
+      .ok-cap{background:var(--clay);}
+      .ok-text{flex:1;color:var(--ink);}
+      .ok-d{flex:none;font-weight:800;font-size:11.5px;}
+      .ok-d.up{color:var(--green);}
+      .ok-d.dn{color:var(--clay);}
+      .ok-note{margin-top:8px;padding:8px 10px;border-radius:8px;background:#fbf1ec;border-left:3px solid var(--clay);font-size:11.5px;line-height:1.65;color:var(--ink);}
+      .ok-empty{margin-top:10px;font-size:11.5px;color:var(--muted);}
       .occbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 8px;margin-bottom:14px;}
       .occbox-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px;}
       .occbox-title{font-size:13.5px;font-weight:800;color:var(--ink);}
@@ -1247,6 +1262,9 @@ function project(state, decision, event) {
       hijunLimited, understaffed, reqStaff, occRate, kasanFailed, haircut, genzan,
       billingLoss, staffCostUp: ev.staffCostUp ?? 0, priceDown: ev.priceDown ?? 0,
       avgLevel, avgLoad, demand, hijunCap, capDay, C, staff, nqReal, marginRate: M, marginT, rep, bottleneck, userCount: usersNow, mtgGap: mtgGapEff,
+      // 稼働率の増減を「打ち手／外部要因／構造」に切り分けるための内訳（v4.14.0）
+      satAdj, occMultEv: (ev.occMult ?? 1), occMultI, mixDemand: mixInfo.demand, ikFactor: ik.factor, rawDemand: Math.floor(rawDemand),
+      effSales, effEvUsers,
       hours: { need, alloc, careH, remaining, hoursGap, ratios, delegable: need.delegable, total: H } },
     preAfter: { users, sat, ret, comp, bcp, staff: curStaff, mix: rounded },
     churn, riskPct: risk, auditNote, event, reasons,
@@ -1886,6 +1904,93 @@ function occLegend() {
   </div>`;
 }
 
+/* ---------------- 稼働率が動いた理由を「打ち手／外部要因／構造／体制」に切り分ける ----------------
+   数字が上がっても、それが自分の判断の成果なのか、たまたま出来事が明けただけなのかは
+   数値だけでは区別がつかない。ここで要因を分解し、種別を明示して並べる。
+   分解は demand = 構成需要 × satAdj × occMult × 受入方針係数 の乗法構造に基づく。
+------------------------------------------------------------------------------------- */
+const OCC_KIND = {
+  act:  { label: "打ち手", cls: "ok-act" },
+  luck: { label: "外部要因", cls: "ok-luck" },
+  str:  { label: "構造", cls: "ok-str" },
+  cap:  { label: "体制", cls: "ok-cap" },
+};
+function occReasons(cur, prev) {
+  const out = [], pt = (v) => Math.round((v / CAP) * 100);
+  const push = (kind, delta, text) => { if (Math.abs(delta) >= 1) out.push({ kind, delta, text }); };
+  if (!prev) {
+    return { rows: [], note: "初月のため、前月との比較はできません。" };
+  }
+  const dOcc = Math.round((cur.occRate - prev.occRate) * 100);
+
+  // ① 出来事の当月効果（今月かかっている倍率）
+  if (cur.occMultEv !== 1) {
+    const eff = pt(cur.mixDemand * cur.satAdj * cur.ikFactor * (cur.occMultEv - 1));
+    push("luck", eff, `今月の出来事で来所が${cur.occMultEv < 1 ? "減った" : "増えた"}（×${cur.occMultEv.toFixed(2)}）。これは一時的な影響で、来月には外れます`);
+  }
+  // ② 前月の出来事が明けた反動（＝経営改善ではない）
+  if (prev.occMultEv !== 1 && cur.occMultEv === 1) {
+    const eff = pt(cur.mixDemand * cur.satAdj * cur.ikFactor * (1 - prev.occMultEv));
+    push("luck", eff, `先月の出来事（×${prev.occMultEv.toFixed(2)}）の影響が明けて戻りました。経営が良くなったわけではありません`);
+  }
+  // ③ 打ち手による当月効果（スポットレク・研修）
+  if (cur.occMultI !== 1) {
+    const eff = pt(cur.mixDemand * cur.satAdj * cur.ikFactor * (cur.occMultI - 1));
+    push("act", eff, cur.occMultI > 1 ? "今月の追加施策で来所が増えました" : "今月の追加施策で現場が薄くなり、来所がわずかに減りました");
+  }
+  // ④ 満足度の変化（打ち手の遅効。足が向くかどうか）
+  if (Math.abs(cur.satAdj - prev.satAdj) > 0.001) {
+    const eff = pt(cur.mixDemand * (cur.satAdj - prev.satAdj) * cur.ikFactor);
+    push("act", eff, `満足度が${cur.satAdj > prev.satAdj ? "上がり、利用者の足が向くように" : "下がり、足が遠のくように"}なりました`);
+  }
+  // ⑤ 登録利用者数の変化
+  if (Math.round(cur.userCount) !== Math.round(prev.userCount)) {
+    const d = Math.round(cur.userCount) - Math.round(prev.userCount);
+    const per = prev.userCount > 0 ? cur.mixDemand / cur.userCount : 0;
+    const unit = (n) => pt(per * n * cur.satAdj * cur.ikFactor);
+    // 増分の出どころを、打ち手（営業・会議）／出来事／評判の3つに切り分ける
+    const byAct = cur.effSales || 0, byEv = cur.effEvUsers || 0, byRep = d - byAct - byEv;
+    if (byAct) push("act", unit(byAct), `営業の打ち手で利用者が＋${byAct}名`);
+    if (byEv) push("luck", unit(byEv), `出来事で利用者が${byEv > 0 ? "＋" : ""}${byEv}名。自分の打ち手ではありません`);
+    if (Math.abs(byRep) >= 1) push("str", unit(byRep),
+      `評判の変化で登録利用者が${byRep > 0 ? "＋" : ""}${byRep}名（満足度の結果が遅れて効きます）`);
+    if (!byAct && !byEv && Math.abs(byRep) < 1) push("str", unit(d),
+      `登録利用者が${d > 0 ? "＋" : ""}${d}名（${Math.round(prev.userCount)}→${Math.round(cur.userCount)}名）`);
+  }
+  // ⑥ 利用者構成の重度化（構造的な変化）
+  if (Math.abs(cur.avgLevel - prev.avgLevel) > 0.005 && cur.userCount === prev.userCount) {
+    push("str", pt((cur.mixDemand - prev.mixDemand) * cur.satAdj * cur.ikFactor),
+      `利用者構成が${cur.avgLevel > prev.avgLevel ? "重度側へ寄り、来所頻度が上がりました" : "軽度側へ寄り、来所頻度が下がりました"}（平均要介護度 ${prev.avgLevel.toFixed(2)}→${cur.avgLevel.toFixed(2)}）`);
+  }
+  // ⑦ 受入上限で頭打ち（体制の制約）
+  if (cur.bottleneck === "受入上限") {
+    const lost = pt(Math.min(cur.demand, CAP) - cur.hijunCap);
+    push("cap", -Math.abs(lost), `職員配置が天井になり、受けられたはずの来所を断っています（受入上限 ${Math.round(cur.hijunCap / CAP * 100)}%）`);
+  }
+  if (cur.hijunCap < prev.hijunCap) {
+    out.push({ kind: "cap", delta: 0,
+      text: `受入上限そのものが下がりました（${Math.round(prev.hijunCap / CAP * 100)}%→${Math.round(cur.hijunCap / CAP * 100)}%）。職員が減り、受けられる体力が落ちています` });
+  }
+  // 逆行パターン：稼働は上がったのに体力は落ちている
+  let note = "";
+  if (dOcc > 0 && cur.hijunCap < prev.hijunCap) {
+    note = "稼働率は上がりましたが、受け入れられる上限は下がっています。数字の回復と、事業所の体力の回復は別です。";
+  } else if (dOcc > 0 && out.some((o) => o.kind === "luck" && o.delta > 0) && !out.some((o) => o.kind === "act" && o.delta > 0)) {
+    note = "今月の上昇は外部要因によるもので、打ち手の成果ではありません。";
+  } else if (dOcc < 0 && out.every((o) => o.kind !== "act")) {
+    note = "今月の低下に、打ち手による要因は含まれていません。";
+  }
+  // 説明しきれない差は月次平滑の繰り越し。急な増減は数ヶ月かけて反映される
+  const accounted = out.reduce((a, o) => a + o.delta, 0);
+  const resid = dOcc - accounted;
+  if (Math.abs(resid) >= 2) {
+    out.push({ kind: "str", delta: resid,
+      text: "急な増減は一度に反映されず、数ヶ月かけてならされます。前月に反映しきれなかった分が今月に出ています" });
+  }
+  out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  return { rows: out, note, dOcc };
+}
+
 function meter(label, value, max, color, suffix = "") {
   const pct = clamp((value / max) * 100, 0, 100);
   return `<div class="meter">
@@ -2236,6 +2341,22 @@ function bottleneckBlock(bd) {
     </div>
     <div class="bnk-occ">稼働率 <b>${Math.round(bd.occRate * 100)}%</b>＝延べ ${bd.visits}回 ÷ 定員 ${CAP}回</div>
     <div class="bnk-note bn-${isHijun ? "staff" : bnKey}">${note}</div>
+    ${(() => {
+      const prevBd = App.log.length >= 2 ? App.log[App.log.length - 2].breakdown : null;
+      const a = occReasons(bd, prevBd);
+      if (!prevBd) return `<div class="ok-empty">${esc(a.note)}</div>`;
+      const sign = a.dOcc > 0 ? "＋" : a.dOcc < 0 ? "−" : "±";
+      return `<div class="okbox">
+        <div class="ok-head">前月から <b>${sign}${Math.abs(a.dOcc)}pt</b> 動いた理由
+          <small>打ち手の成果か、たまたまかを見分ける</small></div>
+        ${a.rows.length ? a.rows.map((o) => `<div class="ok-row">
+          <span class="ok-tag ${OCC_KIND[o.kind].cls}">${OCC_KIND[o.kind].label}</span>
+          <span class="ok-text">${esc(o.text)}</span>
+          ${o.delta ? `<span class="ok-d ${o.delta > 0 ? "up" : "dn"}">${o.delta > 0 ? "+" : ""}${o.delta}pt</span>` : ""}
+        </div>`).join("") : `<div class="ok-row"><span class="ok-text">大きな変動要因はありません。</span></div>`}
+        ${a.note ? `<div class="ok-note">${esc(a.note)}</div>` : ""}
+      </div>`;
+    })()}
   </div>`;
 }
 
