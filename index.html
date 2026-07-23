@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.14.0-2026-07-23">
+<meta name="version" content="v4.15.0-2026-07-23">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -1265,6 +1265,10 @@ function project(state, decision, event) {
       // 稼働率の増減を「打ち手／外部要因／構造」に切り分けるための内訳（v4.14.0）
       satAdj, occMultEv: (ev.occMult ?? 1), occMultI, mixDemand: mixInfo.demand, ikFactor: ik.factor, rawDemand: Math.floor(rawDemand),
       effSales, effEvUsers,
+      // 需要は「月初時点」の満足度・利用者数で決まる。メーターは月初→月末を表示するため、
+      // 両方を持たせて『満足度の改善は翌月に効く』というズレを明示できるようにする（v4.15.0）
+      satIn: Math.round(state.sat), satOut: Math.round(sat),
+      usersIn: Math.round(usersNow), usersOut: Math.round(users),
       hours: { need, alloc, careH, remaining, hoursGap, ratios, delegable: need.delegable, total: H } },
     preAfter: { users, sat, ret, comp, bcp, staff: curStaff, mix: rounded },
     churn, riskPct: risk, auditNote, event, reasons,
@@ -1916,7 +1920,7 @@ const OCC_KIND = {
   cap:  { label: "体制", cls: "ok-cap" },
 };
 function occReasons(cur, prev) {
-  const out = [], pt = (v) => Math.round((v / CAP) * 100);
+  const out = [], head = [], pt = (v) => Math.round((v / CAP) * 100);
   const push = (kind, delta, text) => { if (Math.abs(delta) >= 1) out.push({ kind, delta, text }); };
   if (!prev) {
     return { rows: [], note: "初月のため、前月との比較はできません。" };
@@ -1941,7 +1945,8 @@ function occReasons(cur, prev) {
   // ④ 満足度の変化（打ち手の遅効。足が向くかどうか）
   if (Math.abs(cur.satAdj - prev.satAdj) > 0.001) {
     const eff = pt(cur.mixDemand * (cur.satAdj - prev.satAdj) * cur.ikFactor);
-    push("act", eff, `満足度が${cur.satAdj > prev.satAdj ? "上がり、利用者の足が向くように" : "下がり、足が遠のくように"}なりました`);
+    const up = cur.satIn > prev.satIn;
+    push("act", eff, `先月の満足度の${up ? "改善" : "低下"}（${prev.satIn}→${cur.satIn}）が今月の来所に出ました。満足度は翌月の来所に効きます`);
   }
   // ⑤ 登録利用者数の変化
   if (Math.round(cur.userCount) !== Math.round(prev.userCount)) {
@@ -1950,12 +1955,15 @@ function occReasons(cur, prev) {
     const unit = (n) => pt(per * n * cur.satAdj * cur.ikFactor);
     // 増分の出どころを、打ち手（営業・会議）／出来事／評判の3つに切り分ける
     const byAct = cur.effSales || 0, byEv = cur.effEvUsers || 0, byRep = d - byAct - byEv;
-    if (byAct) push("act", unit(byAct), `営業の打ち手で利用者が＋${byAct}名`);
-    if (byEv) push("luck", unit(byEv), `出来事で利用者が${byEv > 0 ? "＋" : ""}${byEv}名。自分の打ち手ではありません`);
+    if ([byAct, byEv, Math.abs(byRep) >= 1 ? byRep : 0].filter(Boolean).length >= 2)
+      head.push({ kind: "str", delta: 0, head: true,
+        text: `月初の登録利用者は ${prev.usersIn}→${cur.usersIn}名（${d > 0 ? "＋" : ""}${d}名）。内訳は次のとおりです` });
+    if (byAct) push("act", unit(byAct), `営業の打ち手で利用者が＋${byAct}名分`);
+    if (byEv) push("luck", unit(byEv), `出来事で利用者が${byEv > 0 ? "＋" : ""}${byEv}名分。自分の打ち手ではありません`);
     if (Math.abs(byRep) >= 1) push("str", unit(byRep),
-      `評判の変化で登録利用者が${byRep > 0 ? "＋" : ""}${byRep}名（満足度の結果が遅れて効きます）`);
+      `評判の変化で利用者が${byRep > 0 ? "＋" : ""}${byRep}名分（満足度の結果が遅れて効きます）`);
     if (!byAct && !byEv && Math.abs(byRep) < 1) push("str", unit(d),
-      `登録利用者が${d > 0 ? "＋" : ""}${d}名（${Math.round(prev.userCount)}→${Math.round(cur.userCount)}名）`);
+      `月初の登録利用者が${d > 0 ? "＋" : ""}${d}名（${prev.usersIn}→${cur.usersIn}名）`);
   }
   // ⑥ 利用者構成の重度化（構造的な変化）
   if (Math.abs(cur.avgLevel - prev.avgLevel) > 0.005 && cur.userCount === prev.userCount) {
@@ -1973,7 +1981,13 @@ function occReasons(cur, prev) {
   }
   // 逆行パターン：稼働は上がったのに体力は落ちている
   let note = "";
-  if (dOcc > 0 && cur.hijunCap < prev.hijunCap) {
+  // 今月メーター上で満足度が動いた向きと、来所に効いた向きが逆のとき（＝1ヶ月の時間差）
+  const satMoveNow = cur.satOut - cur.satIn, satMoveLag = cur.satIn - prev.satIn;
+  if (satMoveNow > 1 && satMoveLag < -1) {
+    note = `今月の満足度は${cur.satIn}→${cur.satOut}へ改善しています。ただし来所に効くのは翌月からで、今月の来所は先月末の満足度（${cur.satIn}）で決まっています。`;
+  } else if (satMoveNow < -1 && satMoveLag > 1) {
+    note = `今月の満足度は${cur.satIn}→${cur.satOut}へ低下しました。今月の来所にはまだ表れていませんが、来月の来所に効いてきます。`;
+  } else if (dOcc > 0 && cur.hijunCap < prev.hijunCap) {
     note = "稼働率は上がりましたが、受け入れられる上限は下がっています。数字の回復と、事業所の体力の回復は別です。";
   } else if (dOcc > 0 && out.some((o) => o.kind === "luck" && o.delta > 0) && !out.some((o) => o.kind === "act" && o.delta > 0)) {
     note = "今月の上昇は外部要因によるもので、打ち手の成果ではありません。";
@@ -1988,7 +2002,7 @@ function occReasons(cur, prev) {
       text: "急な増減は一度に反映されず、数ヶ月かけてならされます。前月に反映しきれなかった分が今月に出ています" });
   }
   out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
-  return { rows: out, note, dOcc };
+  return { rows: head.concat(out), note, dOcc };
 }
 
 function meter(label, value, max, color, suffix = "") {
