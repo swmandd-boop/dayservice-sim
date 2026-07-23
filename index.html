@@ -9,7 +9,7 @@
 <meta property="og:description" content="良いケアを提供していさえすれば、経営は回るのか。デイサービスの経営を12ヶ月体験し、自事業所の課題を整理できる無料の自己診断ツールです。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e5e5a">
-<meta name="version" content="v4.7.3-2026-07-20">
+<meta name="version" content="v4.13.0-2026-07-23">
 <style>
 
       :root{--ink:#15303a;--paper:#e6ecea;--card:#fff;--line:#d5ddda;--teal:#0e5e5a;--teal-d:#0a4442;
@@ -45,6 +45,25 @@
       .phead-recv{font-size:11px;color:#9db4b0;margin-top:2px;}
       .phead-pl{font-size:12px;font-weight:700;margin-top:3px;}
 
+      .occbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 8px;margin-bottom:14px;}
+      .occbox-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px;}
+      .occbox-title{font-size:13.5px;font-weight:800;color:var(--ink);}
+      .occbox-now{font-size:11.5px;font-weight:700;color:var(--muted);}
+      .occbox svg{display:block;width:100%;height:auto;}
+      .occ-empty{font-size:11.5px;color:var(--muted);padding:14px 2px;line-height:1.6;}
+      .occ-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;font-size:10.5px;color:var(--muted);}
+      .occ-legend span{display:flex;align-items:center;gap:4px;}
+      .occ-legend i{display:inline-block;width:14px;height:0;flex:none;}
+      .lg-line{border-top:2.2px solid var(--teal);}
+      .lg-dash{border-top:1.6px dashed var(--slate);}
+      .lg-band{height:8px!important;background:var(--green);opacity:.22;border-radius:2px;}
+      .occ-read{font-size:11.5px;color:var(--muted);line-height:1.65;margin-top:7px;}
+      .scene{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 10px;margin-bottom:14px;}
+      .scene-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px;}
+      .scene-title{font-size:13.5px;font-weight:800;color:var(--ink);}
+      .scene-badge{font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;color:#fff;white-space:nowrap;}
+      .scene svg{display:block;width:100%;height:auto;border-radius:9px;}
+      .scene-note{font-size:11.5px;color:var(--muted);line-height:1.65;margin-top:8px;}
       .meters{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
       .meter{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
       .meter-wide{grid-column:span 2;}
@@ -490,8 +509,8 @@ const CONFIG = {
     // 非正規P＝staff−5（人件費・最低賃金の対象）。介護換算数C＝介護正規2＋P＝staff−3。
     coreStaff: 5, coreWage: 1_400_000, partWage: 190_000, employerBurden: 1.15,
     // 経費は「収入×経費率」で構造化（実額固定をやめ、収入変動でも経費率が安定）
-    adminExpenseRate: 0.07, // 事務費＝収入の7%（家賃・通信・減価償却など運営管理）
-    serviceExpenseRate: 0.18, // 事業費＝収入の18%（食材・水道光熱・消耗品・送迎燃料などサービス直接）→ 合計経費率25%
+    adminExpenseRate: 0.08, // 事務費＝収入の8%（家賃・通信・減価償却など運営管理）
+    serviceExpenseRate: 0.22, // 事業費＝収入の22%（食材・水道光熱・消耗品・送迎燃料などサービス直接）→ 合計経費率30%
     teiin: 25, operatingDays: 22, // 定員 × 稼働日 = 月間定員回数
     usersMin: 20, usersMax: 60, staffMin: 2, staffMax: 14, retBomb: 40,
     receivableSeed: 3_400_000, // 開始時の売掛（過去2ヶ月分の報酬）
@@ -542,9 +561,10 @@ const CONFIG = {
   initiatives: {
     sales: { key: "sales", label: "営業強化", cost: 120_000, users: 4, hint: "新規利用者↑↑（−¥120,000）／稼働の余力がなければ活きない" },
     spotrec: { key: "spotrec", label: "スポットレク", cost: 50_000, satBoost: 10, occBoost: 0.04, hint: "満足度↑・当月の来所↑（−¥50,000）／効果は定着度で変わる" },
-    training: { key: "training", label: "職員研修", cost: 80_000, retBoost: 10, satBoost: 4, compBoost: 4, occMult: 0.97, hint: "定着↑・満足度↑・記録↑（−¥80,000）／当月は現場が薄く稼働微減" },
-    records: { key: "records", label: "記録・書類の整備", cost: 40_000, compBoost: 12, hint: "適正運営度↑（−¥40,000）／実地指導・加算算定への備え" },
+    training: { key: "training", label: "職員研修", cost: 80_000, retBoost: 14, satBoost: 4, compBoost: 4, occMult: 0.97, hint: "定着↑・満足度↑・記録↑（−¥80,000）／当月は現場が薄く稼働微減" },
+    meeting: { key: "meeting", label: "職員会議", cost: 50_000, retBoost: 6, satBoost: 5, compBoost: 5, users: 2, hint: "定着↑・ケア↑・加算習得↑・紹介↑（−¥50,000＝残業代¥30,000＋資料代¥20,000）／正規・非正規の足並みが揃う" },
     bcp: { key: "bcp", label: "BCP対策・備蓄", cost: 60_000, bcpBoost: 15, hint: "備え↑（−¥60,000）／災害が来なければ無駄に見える。来たときだけ効く保険" },
+    records: { key: "records", label: "記録・書類の整備", cost: 40_000, compBoost: 12, hint: "適正運営度↑（−¥40,000）／実地指導・加算算定への備え" },
   },
 };
 
@@ -891,7 +911,7 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const conv = (cur, tgt, rate) => cur + (tgt - cur) * rate;
 const yen = (n) => "¥" + Math.round(n).toLocaleString("ja-JP");
 const signYen = (n) => (n >= 0 ? "+" : "−") + "¥" + Math.abs(Math.round(n)).toLocaleString("ja-JP");
-const abbrInit = (l) => ({ "営業強化": "営", "スポットレク": "レク", "職員研修": "研", "記録・書類の整備": "記録" }[l] || l);
+const abbrInit = (l) => ({ "営業強化": "営", "スポットレク": "レク", "職員研修": "研", "職員会議": "会議", "記録・書類の整備": "記録" }[l] || l);
 
 /* ------------------- 1ヶ月の試算（確定的・事故抽選は含めない） ------------------- */
 function project(state, decision, event) {
@@ -907,9 +927,19 @@ function project(state, decision, event) {
   if (inits.includes("sales")) { initCost += CONFIG.initiatives.sales.cost; salesUsers = CONFIG.initiatives.sales.users; }
   if (inits.includes("spotrec")) { const i = CONFIG.initiatives.spotrec; initCost += i.cost; satTb += Math.round(i.satBoost * cond); occMultI *= 1 + i.occBoost * cond; }
   if (inits.includes("training")) { const i = CONFIG.initiatives.training; initCost += i.cost; retTb += i.retBoost; satTb += i.satBoost; compTb += i.compBoost; occMultI *= i.occMult; }
+  if (inits.includes("meeting")) { const i = CONFIG.initiatives.meeting; initCost += i.cost; retTb += i.retBoost; satTb += i.satBoost; compTb += i.compBoost; salesUsers += i.users; } // 会議は就業後開催＝残業代(initCost)。稼働は削らない(occMult無し)ので研修と対になる
   if (inits.includes("records")) { const i = CONFIG.initiatives.records; initCost += i.cost; compTb += i.compBoost; }
   let bcpBoost = 0;
   if (inits.includes("bcp")) { const i = CONFIG.initiatives.bcp; initCost += i.cost; bcpBoost += i.bcpBoost; }
+
+  // 職員会議は「開いた月だけ効く投資」ではなく「開かない月が積み上がると崩れる土台」。
+  // 1ヶ月の空きは許容し、2ヶ月目から効き始めて月を追うごとに深くなる（上限−10）。
+  // 今月開けば当月分は解消する＝プレビュー上でも即座に戻る。
+  const mtgGapEff = inits.includes("meeting") ? 0 : (state.mtgGap ?? 0) + 1;
+  const mtgPen = mtgGapEff <= 1 ? 0 : Math.min(3 + (mtgGapEff - 2) * 2, 10);
+  const mtgRetT = -mtgPen;                     // 足並み・一体感の緩み → 定着
+  const mtgCompT = -Math.round(mtgPen * 0.8);  // 情報共有が途切れ、記録・加算要件の徹底が緩む
+  const mtgSatT = -Math.round(mtgPen * 0.6);   // ケアの方針が職員ごとにばらつく
 
   // 人員レバー: 下限はコア5名（プレイヤーは操作でコア割れを選べない）。
   // イベント(離職等)でコア割れ中は、レバーでの削減は不可・増員のみ可。
@@ -1053,38 +1083,41 @@ function project(state, decision, event) {
   add("sat", c.satT - 60, `ケアの手厚さ「${c.label}」`);
   add("sat", ik.satT, `受入方針「${ik.label}」`);
   add("sat", ka.satT, `加算「${ka.label}」による自立支援`);
-  add("sat", satTb, "追加施策（レク・研修）");
+  add("sat", satTb, "追加施策（レク・研修・会議）");
   add("sat", (ev.satT ?? 0) + (ev.satShock ?? 0), ev.title ? `出来事「${ev.title}」` : "出来事");
   add("sat", -crowd * 8, "定員ぎりぎりの過密運営で目が行き届かない");
   add("sat", marginT, marginT >= 0 ? "配置に余裕があり、現場が回っている" : "配置に余裕がなく、現場が回らない");
   add("sat", hoursPen.satT, "家族対応・苦情処理に手が回らなかった");
+  add("sat", mtgSatT, `職員会議がなく、ケアの方針が職員ごとにばらついている（未開催${mtgGapEff}ヶ月）`);
 
   // 定着度の要因
   add("ret", stRetT, `人員体制「${st.label}」`);
   add("ret", ik.retT, `受入方針「${ik.label}」による現場の負担`);
   add("ret", decision.care === "premium" ? -2 : 0, "手厚いケアによる現場の負担");
-  add("ret", retTb, "追加施策（研修など人への投資）");
+  add("ret", retTb, "追加施策（研修・会議など人への投資）");
   add("ret", (ev.retT ?? 0) + (ev.retShock ?? 0), ev.title ? `出来事「${ev.title}」` : "出来事");
   add("ret", -crowd * 5, "過密運営による疲弊");
   add("ret", hoursPen.retT, "職員面談・シフト調整に手が回らなかった");
+  add("ret", mtgRetT, `職員会議を${mtgGapEff}ヶ月開いておらず、正規・非正規の足並みが揃わない`);
 
   // 適正運営度の要因
   add("comp", stCompT, `人員体制「${st.label}」`);
   add("comp", ik.compT, `受入方針「${ik.label}」で記録が後回しに`);
   add("comp", ka.compT, `加算「${ka.label}」の記録・事務負担`);
-  add("comp", compTb, "追加施策（記録の整備・研修）");
+  add("comp", compTb, "追加施策（記録の整備・研修・会議）");
   add("comp", ev.compT ?? 0, ev.title ? `出来事「${ev.title}」` : "出来事");
   add("comp", understaffed ? -15 : 0, "人員配置基準を満たしておらず運営が崩れている");
   add("comp", hoursPen.compT, "請求・記録の事務に手が回らなかった");
+  add("comp", mtgCompT, `職員会議がなく、記録・加算要件の徹底が現場に伝わっていない（未開催${mtgGapEff}ヶ月）`);
 
   // 目標水準への収束（＝維持しないと自然に戻る）
   // 層2(配置余裕)とcrowd(過密)のsatチャネル負項は合算下限−12（三重罰防止・§2）
   const satNeg = Math.max(Math.min(marginT, 0) + (-crowd * 8), -12);
-  const satTarget = clamp(c.satT + ik.satT + ka.satT + satTb + (ev.satT ?? 0) + (ev.satShock ?? 0) + Math.max(marginT, 0) + satNeg + hoursPen.satT, 0, 100);
+  const satTarget = clamp(c.satT + ik.satT + ka.satT + satTb + (ev.satT ?? 0) + (ev.satShock ?? 0) + Math.max(marginT, 0) + satNeg + hoursPen.satT + mtgSatT, 0, 100);
   const retTarget = clamp(55 + stRetT + ik.retT + (decision.care === "premium" ? -2 : 0) + retTb
-    + (ev.retT ?? 0) + (ev.retShock ?? 0) - crowd * 5 + hoursPen.retT, 0, 100);
+    + (ev.retT ?? 0) + (ev.retShock ?? 0) - crowd * 5 + hoursPen.retT + mtgRetT, 0, 100);
   const compTarget = clamp(60 + stCompT + ik.compT + ka.compT + compTb + (ev.compT ?? 0)
-    + (understaffed ? -15 : 0) + hoursPen.compT, 0, 100);
+    + (understaffed ? -15 : 0) + hoursPen.compT + mtgCompT, 0, 100);
 
   let sat = Math.round(conv(state.sat, satTarget, 0.4));
   let ret = Math.round(conv(state.ret, retTarget, 0.4));
@@ -1191,6 +1224,7 @@ function project(state, decision, event) {
 
   let churn = false;
   if (ret < B.retBomb) {
+    // 離職は連鎖する。深く割るほど穴埋めの負荷が増し、次が抜ける（相談員の警告と整合させる）
     curStaff -= 1; churn = true;
     add("staff", -1, "定着度が限界を割り、職員が離職した");
   }
@@ -1212,7 +1246,7 @@ function project(state, decision, event) {
       initCost, auditCost, clawback, eventCost, eventCash, fixedUp: ev.fixedUp ?? 0, expense, pl,
       hijunLimited, understaffed, reqStaff, occRate, kasanFailed, haircut, genzan,
       billingLoss, staffCostUp: ev.staffCostUp ?? 0, priceDown: ev.priceDown ?? 0,
-      avgLevel, avgLoad, demand, hijunCap, capDay, C, staff, nqReal, marginRate: M, marginT, rep, bottleneck, userCount: usersNow,
+      avgLevel, avgLoad, demand, hijunCap, capDay, C, staff, nqReal, marginRate: M, marginT, rep, bottleneck, userCount: usersNow, mtgGap: mtgGapEff,
       hours: { need, alloc, careH, remaining, hoursGap, ratios, delegable: need.delegable, total: H } },
     preAfter: { users, sat, ret, comp, bcp, staff: curStaff, mix: rounded },
     churn, riskPct: risk, auditNote, event, reasons,
@@ -1278,6 +1312,7 @@ function resolveMonth(state, decision, event) {
       coreShortPrev: after.staff < CONFIG.base.coreStaff, // コア割れ翌月に減算を適用（D-3）
       prevOcc: bd.occRate,                                 // 営業逓減の基準（v4.7.1）
       rep: bd.rep,                                         // 評判（遅効・v4.7.2）
+      mtgGap: bd.mtgGap,                                   // 職員会議の連続未開催月数
       marginRate: bd.marginRate,                          // 離職確率の連動に使う（D-2）
       staffCostUp: (state.staffCostUp || 0) + (bd.staffCostUp || 0),   // 最低賃金は以後ずっと効く
       priceDown: (state.priceDown || 0) + (bd.priceDown || 0) },        // 報酬改定も以後ずっと効く
@@ -1585,7 +1620,7 @@ function startGame(mode) {
     users: LEVELS.reduce((a, L) => a + (B.initMix[L.key] || 0), 0),
     ret: B.initRet, comp: B.initComp, bcp: B.initBcp,
     pipeline: [B.receivableSeed, B.receivableSeed],
-    staffCostUp: 0, priceDown: 0, policy: null, coreShortPrev: false, marginRate: 1.3, prevOcc: 0.65, rep: 8,
+    staffCostUp: 0, priceDown: 0, policy: null, coreShortPrev: false, marginRate: 1.3, prevOcc: 0.65, rep: 8, mtgGap: 0,
   };
   s0.card = drawCard(s0, 1, months);
   App.state = s0;
@@ -1720,6 +1755,137 @@ function viewStart() {
 }
 
 /* ------------------------------- 判断画面 ------------------------------- */
+/* ------------------- 事業所の「様子」を絵で見せる（4段階） -------------------
+   数字のメーターだけでは、経営状態が現場の風景としてどう見えるかが伝わらない。
+   稼働率・満足度・損益・定着度を合成し、4段階の情景に落とす。
+   外部画像は使わず、インラインSVGで描く（オフライン単一HTMLを維持）。
+------------------------------------------------------------------------- */
+function facilityMood(s, occRate, pl) {
+  // 稼働率は0.78前後が理想。低ければ空席、高すぎれば過密でどちらも良い絵にならない
+  const occ = occRate == null ? 0.70 : occRate;
+  const occPt = clamp(100 - Math.abs(occ - 0.78) * 300, 0, 100);
+  const satPt = clamp(s.sat, 0, 100);
+  const retPt = clamp(s.ret, 0, 100);
+  const plPt = pl == null ? 60
+    : pl >= 400_000 ? 100 : pl >= 0 ? 78 : pl >= -300_000 ? 42 : 12;
+  const score = satPt * 0.30 + occPt * 0.25 + plPt * 0.25 + retPt * 0.20;
+  const level = score >= 72 ? 4 : score >= 58 ? 3 : score >= 43 ? 2 : 1;
+  return { level, score, occ };
+}
+
+const SCENE = {
+  4: { title: "活気がある", wall: "#f2f9f5", floor: "#dcebe4", light: "#fff6df", accent: "var(--green)",
+       tone: "利用者でにぎわい、職員にも余裕があります。今の形を崩さないことが次の課題です。" },
+  3: { title: "落ち着いている", wall: "#f5f8f6", floor: "#e2e9e6", light: "#fbf3e4", accent: "var(--teal)",
+       tone: "大きな問題はありません。ただ、空いた席と職員の余力がじわじわ効いてきます。" },
+  2: { title: "かげりが見える", wall: "#f6f4ee", floor: "#e6e3da", light: "#f2ead9", accent: "var(--amber)",
+       tone: "空席が目立ち、現場に余裕がなくなってきました。手を打つなら今です。" },
+  1: { title: "危うい", wall: "#f2efee", floor: "#e0dbd9", light: "#eae4e0", accent: "var(--clay)",
+       tone: "利用者が減り、職員も疲れています。立て直しには時間がかかります。" },
+};
+
+function facilityScene(s, occRate, pl) {
+  const m = facilityMood(s, occRate, pl), sc = SCENE[m.level], L = m.level;
+  // 席は8つ。稼働率をそのまま埋まり具合に写す（絵と数字がずれないように）
+  const seats = 8;
+  const filled = clamp(Math.round(m.occ * seats), L === 1 ? 1 : 2, seats);
+  const seatX = [26, 62, 98, 134, 170, 206, 242, 278];
+  // 表情：満足度で口の形が変わる
+  const mouth = (x, y) => s.sat >= 68 ? `<path d="M${x - 3} ${y} q3 3.2 6 0" stroke="#3d4a48" stroke-width="1.2" fill="none" stroke-linecap="round"/>`
+    : s.sat >= 52 ? `<path d="M${x - 3} ${y} h6" stroke="#3d4a48" stroke-width="1.2" fill="none" stroke-linecap="round"/>`
+    : `<path d="M${x - 3} ${y + 1.5} q3 -3.2 6 0" stroke="#3d4a48" stroke-width="1.2" fill="none" stroke-linecap="round"/>`;
+  const skin = "#f0d9c2", empty = "#cfd8d4";
+  // 着席者：頭・体・椅子。空席は椅子だけ残る
+  const person = (x, i) => {
+    const on = i < filled, y = 74, slump = L === 1 ? 3 : 0; // 危機時はうつむき気味
+    if (!on) return `<rect x="${x - 8}" y="${y + 8}" width="16" height="14" rx="3" fill="${empty}"/>
+      <rect x="${x - 8}" y="${y - 2}" width="16" height="10" rx="3" fill="${empty}" opacity=".55"/>`;
+    const shirt = ["#8fb3c9", "#c9a98f", "#a3bfa8", "#bda9c4"][i % 4];
+    return `<rect x="${x - 8}" y="${y + 8}" width="16" height="14" rx="3" fill="#b9c6c1"/>
+      <path d="M${x - 8} ${y + 12 + slump} q8 -9 16 0 v6 h-16 z" fill="${shirt}"/>
+      <circle cx="${x}" cy="${y + slump}" r="6.4" fill="${skin}"/>
+      ${mouth(x, y + 2.5 + slump)}`;
+  };
+  // 職員：定着度が高いほど人数が立っている
+  const staffN = s.ret >= 62 ? 2 : s.ret >= 46 ? 1 : 1;
+  const staffFig = (x, tired) => `
+    <path d="M${x - 7} 118 q7 -20 14 0 z" fill="var(--teal)" opacity="${tired ? .55 : .9}"/>
+    <circle cx="${x}" cy="${tired ? 100 : 97}" r="6.6" fill="${skin}"/>
+    <path d="M${x - 6} ${tired ? 100 : 97} a6.6 6.6 0 0 1 12 -2" fill="var(--teal)" opacity="${tired ? .55 : .9}"/>`;
+  const tired = s.ret < 46;
+  const staff = staffFig(300, tired) + (staffN >= 2 ? staffFig(18, false) : "");
+  // 掲示物：適正運営度が低いと傾いて剥がれかける
+  const tilt = s.comp >= 60 ? 0 : s.comp >= 45 ? -4 : -11;
+  // 窓の外の光：好調ほど明るい
+  return `<svg viewBox="0 0 320 132" role="img" aria-label="事業所の様子：${sc.title}" preserveAspectRatio="xMidYMid meet">
+    <rect x="0" y="0" width="320" height="132" fill="${sc.wall}"/>
+    <rect x="0" y="104" width="320" height="28" fill="${sc.floor}"/>
+    <rect x="112" y="14" width="62" height="42" rx="3" fill="${sc.light}" stroke="#c3cfca" stroke-width="1.5"/>
+    <path d="M143 14 V56 M112 35 H174" stroke="#c3cfca" stroke-width="1.5"/>
+    ${L >= 3 ? `<circle cx="128" cy="27" r="5" fill="#f2c14e" opacity=".8"/>` : ""}
+    <g transform="rotate(${tilt} 232 30)">
+      <rect x="216" y="16" width="32" height="24" rx="2" fill="#fff" stroke="#c3cfca" stroke-width="1.3"/>
+      <path d="M221 24 h22 M221 30 h22 M221 36 h14" stroke="#c9d3cf" stroke-width="1.6" stroke-linecap="round"/>
+    </g>
+    ${L === 1 ? `<rect x="44" y="30" width="26" height="26" rx="2" fill="#cbbfae"/><path d="M44 43 h26" stroke="#b3a695" stroke-width="1.5"/>` : ""}
+    ${L >= 4 ? `<path d="M62 46 q4 -12 8 0 z" fill="#7fae86"/><circle cx="66" cy="40" r="4" fill="#e07a8a"/><rect x="62" y="46" width="8" height="10" rx="2" fill="#c9d3cf"/>` : ""}
+    ${seatX.map((x, i) => person(x, i)).join("")}
+    <rect x="14" y="96" width="292" height="9" rx="3" fill="#d8c3a5"/>
+    <rect x="14" y="105" width="292" height="4" rx="2" fill="#c2ac8d"/>
+    ${staff}
+  </svg>`;
+}
+
+/* --------------------- 稼働率の推移グラフ（頭打ちの原因を見せる） ---------------------
+   稼働率だけを描いても「なぜ伸びないか」は分からない。今の職員配置・ケア体制で
+   受けられる上限（受入上限）を破線で重ね、線が破線に張り付いていれば体制が天井、
+   破線に余裕があるのに線が低ければ需要不足――と読み分けられるようにする。
+------------------------------------------------------------------------------- */
+function occChart(log, total) {
+  if (!log.length) return `<div class="occ-empty">1ヶ月を終えると、稼働率の推移がここに表示されます。</div>`;
+  const W = 320, H = 116, padL = 27, padR = 10, padT = 10, padB = 20;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const N = Math.max(total || 12, log.length);
+  const X = (i) => padL + (N <= 1 ? 0 : (iw * i) / (N - 1));
+  const Y = (v) => padT + ih * (1 - clamp(v, 0, 100) / 100);
+  const occ = log.map((r) => r.breakdown.occRate * 100);
+  const capL = log.map((r) => clamp((r.breakdown.hijunCap / CAP) * 100, 0, 100));
+  const last = occ[occ.length - 1];
+  // 適正帯：72%未満は余力あり／85%超は過密（エンジンの判定値に合わせる）
+  const bandTop = Y(85), bandBot = Y(72);
+  const grid = [0, 50, 100].map((v) =>
+    `<line x1="${padL}" y1="${Y(v)}" x2="${W - padR}" y2="${Y(v)}" stroke="#e6ecea" stroke-width="1"/>
+     <text x="${padL - 5}" y="${Y(v) + 3.5}" font-size="8.5" fill="var(--muted)" text-anchor="end">${v}</text>`).join("");
+  const line = occ.map((v, i) => `${X(i)},${Y(v)}`).join(" ");
+  const capLine = capL.map((v, i) => `${X(i)},${Y(v)}`).join(" ");
+  const dots = occ.map((v, i) => {
+    const col = v > 85 ? "var(--clay)" : v >= 72 ? "var(--green)" : "var(--amber)";
+    return `<circle cx="${X(i)}" cy="${Y(v)}" r="${i === occ.length - 1 ? 3.6 : 2.4}" fill="${col}"/>`;
+  }).join("");
+  const ticks = Array.from({ length: N }).map((_, i) =>
+    (N <= 12 || i % 2 === 0) ? `<text x="${X(i)}" y="${H - 6}" font-size="8" fill="var(--muted)" text-anchor="middle">${i + 1}</text>` : "").join("");
+  // 直近値のふきだし（右端に寄りすぎたら左に出す）
+  const lx = X(occ.length - 1), flip = lx > W - 52;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="稼働率の推移" preserveAspectRatio="xMidYMid meet">
+    <rect x="${padL}" y="${bandTop}" width="${iw}" height="${bandBot - bandTop}" fill="var(--green)" opacity=".10"/>
+    ${grid}
+    <polyline points="${capLine}" fill="none" stroke="var(--slate)" stroke-width="1.4" stroke-dasharray="4 3" opacity=".75"/>
+    <polyline points="${line}" fill="none" stroke="var(--teal)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+    <rect x="${flip ? lx - 46 : lx + 5}" y="${clamp(Y(last) - 9, padT, H - padB - 18)}" width="41" height="16" rx="4" fill="var(--teal)"/>
+    <text x="${flip ? lx - 25.5 : lx + 25.5}" y="${clamp(Y(last) - 9, padT, H - padB - 18) + 11}" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">${Math.round(last)}%</text>
+    ${ticks}
+  </svg>`;
+}
+
+function occLegend() {
+  return `<div class="occ-legend">
+    <span><i class="lg-line"></i>稼働率</span>
+    <span><i class="lg-dash"></i>受入上限（今の体制で受けられる天井）</span>
+    <span><i class="lg-band"></i>適正帯 72〜85%</span>
+  </div>`;
+}
+
 function meter(label, value, max, color, suffix = "") {
   const pct = clamp((value / max) * 100, 0, 100);
   return `<div class="meter">
@@ -1757,6 +1923,9 @@ function viewDecide() {
   }
   if (s.funds < 500000) warns.push("手元現金が細っています。報酬は約2ヶ月遅れで入るため、単月の支出に注意。");
   if (s.bcp < 30) warns.push("BCP対策度が低い状態です。災害が起きたときの被害が大きくなります。");
+  const mg = s.mtgGap ?? 0;
+  if (mg >= 2) warns.push(`職員会議を${mg}ヶ月開いていません。正規・非正規の足並みが崩れ、定着・ケア・加算要件の徹底が下がり続けます。`);
+  else if (mg === 1) warns.push("先月は職員会議を開いていません。今月も開かないと、職員の足並みに影響が出始めます。");
 
   // 稼働率は「前月の実績」を表示する（当月の予測ではない＝レバーを動かしても動かない）。初月は実績なし。
   const occ = App.lastResult ? Math.round(App.lastResult.breakdown.occRate * 100) : null;
@@ -1796,6 +1965,42 @@ function viewDecide() {
         <div class="adv-text">${esc(adv.text)}</div>
       </div>
     </div>` : ""}
+
+    ${(() => {
+      const occR = App.lastResult ? App.lastResult.breakdown.occRate : null;
+      const plR = App.lastResult ? App.lastResult.breakdown.pl : null;
+      const mo = facilityMood(s, occR, plR), scn = SCENE[mo.level];
+      return `<div class="scene">
+        <div class="scene-top">
+          <span class="scene-title">事業所の様子</span>
+          <span class="scene-badge" style="background:${scn.accent}">${scn.title}</span>
+        </div>
+        ${facilityScene(s, occR, plR)}
+        <div class="scene-note">${esc(scn.tone)}</div>
+      </div>`;
+    })()}
+
+    ${(() => {
+      if (!App.log.length) return "";
+      const oc = App.log.map((r) => r.breakdown.occRate * 100);
+      const cur = oc[oc.length - 1], prev = oc.length > 1 ? oc[oc.length - 2] : null;
+      const dlt = prev == null ? "" : `（前月比 ${cur - prev >= 0 ? "+" : ""}${Math.round(cur - prev)}pt）`;
+      const lastBd = App.log[App.log.length - 1].breakdown;
+      const capPct = clamp((lastBd.hijunCap / CAP) * 100, 0, 100);
+      const read = cur > 85 ? "定員近くまで埋まっています。これ以上は過密になり、満足度と事故リスクに響きます。"
+        : capPct - cur < 6 ? "今の職員配置・ケア体制で受けられる上限に張り付いています。伸ばすには体制側を動かす必要があります。"
+        : cur < 72 ? "受入の余地は残っています。埋まらない原因は体制ではなく、来所の需要側にあります。"
+        : "適正な範囲で推移しています。";
+      return `<div class="occbox">
+        <div class="occbox-top">
+          <span class="occbox-title">稼働率の推移</span>
+          <span class="occbox-now">前月 ${Math.round(cur)}%${dlt}</span>
+        </div>
+        ${occChart(App.log, App.totalMonths)}
+        ${occLegend()}
+        <div class="occ-read">${esc(read)}</div>
+      </div>`;
+    })()}
 
     <div class="meters">
       ${meter("満足度（ケアの質）", s.sat, 100, "var(--amber)")}
@@ -2179,6 +2384,15 @@ function viewEnd() {
         <div class="hi-head">この先に待っていること</div>
         ${issues.map((i) => `<div class="hi ${i.level}">${i.level === "bad" ? "●" : "○"} ${esc(i.text)}</div>`).join("")}
       </div>` : `<div class="health-good">✔ 大きな問題は見当たりません。利用者にも職員にも向き合えた${App.totalMonths}ヶ月でした。</div>`}
+    </div>
+
+    <div class="occbox">
+      <div class="occbox-top">
+        <span class="occbox-title">稼働率の推移（12ヶ月）</span>
+        <span class="occbox-now">平均 ${Math.round(App.log.reduce((a, r) => a + r.breakdown.occRate, 0) / App.log.length * 100)}%</span>
+      </div>
+      ${occChart(App.log, App.totalMonths)}
+      ${occLegend()}
     </div>
 
     <div class="journey">
